@@ -1,8 +1,12 @@
 const wsUri = "ws://localhost:8000/connect";
 
+const wsConfig = {
+  autoConnect: true,
+};
+
 let ws;
 
-const el = (id) => document.getElementById(id);
+const el2 = (id) => document.getElementById(id);
 
 let connectStatus = false;
 
@@ -10,40 +14,33 @@ const EL = {
   disconnectBtn: null,
   wsInput: null,
   sendBtn: null,
-  connectStatusP: null,
+  isConnected: null,
   connectBtn: null,
 };
 
 getElements();
 registerEventHandlers();
-styleConnectStatus();
+renderConnectionStatus();
+
+if (wsConfig.autoConnect) {
+  connectToSocket();
+}
 
 function setIsConnected(connected) {
   connectStatus = connected;
-  styleConnectStatus();
+  renderConnectionStatus();
 }
 
-function styleConnectStatus() {
-  EL.connectStatusP.style.padding = "6px";
-  EL.connectStatusP.style.borderRadius = "4px";
-  EL.connectStatusP.style.display = "inline-block";
-  EL.connectStatusP.style.marginTop = "20px";
-
-  if (connectStatus) {
-    EL.connectStatusP.innerText = "Connected";
-    EL.connectStatusP.style.background = "green";
-  } else {
-    EL.connectStatusP.innerText = "Disconnected";
-    EL.connectStatusP.style.background = "red";
-  }
+function renderConnectionStatus() {
+  EL.isConnected.innerText = connectStatus ? "✅" : "❌";
 }
 
 function getElements() {
-  EL.disconnectBtn = el("disconnectBtn");
-  EL.wsInput = el("wsInput");
-  EL.sendBtn = el("sendBtn");
-  EL.connectStatusP = el("connectStatusP");
-  EL.connectBtn = el("connectBtn");
+  EL.disconnectBtn = el2("disconnectBtn");
+  EL.wsInput = el2("wsInput");
+  EL.sendBtn = el2("sendBtn");
+  EL.isConnected = el2("connectStatusP");
+  EL.connectBtn = el2("connectBtn");
 }
 
 function registerEventHandlers() {
@@ -54,26 +51,28 @@ function registerEventHandlers() {
   EL.sendBtn.addEventListener("click", () => {
     if (connectStatus) {
       ws.send(wsInput.value);
-      wsInput.value = ""
+      wsInput.value = "";
     }
   });
 
-  EL.connectBtn.addEventListener("click", () => {
-    ws = new WebSocket(wsUri);
-    ws.onopen = function (event) {
-      console.log("Socket connection established: ", event);
-      setIsConnected(true);
+  EL.connectBtn.addEventListener("click", () => {});
+}
 
-      ws.send("Hello World");
-    };
+function connectToSocket() {
+  ws = new WebSocket(wsUri);
+  ws.onopen = function (event) {
+    console.log("Socket connection established: ", event);
+    setIsConnected(true);
 
-    ws.onmessage = function (event) {
-      console.log("Message: ", event.data);
-    };
+    ws.send("Hello World");
+  };
 
-    ws.onclose = function (event) {
-      console.log("Disconnected", event);
-      setIsConnected(false);
-    };
-  });
+  ws.onmessage = function (event) {
+    console.log("Message: ", event.data);
+  };
+
+  ws.onclose = function (event) {
+    console.log("Disconnected", event);
+    setIsConnected(false);
+  };
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var port = flag.String("port", "9000", "http service port")
+var port = flag.String("port", "8000", "http service port")
 var host = flag.String("host", "localhost", "http service host")
 
 var upgrader = websocket.Upgrader{
@@ -19,9 +19,12 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
+	fs := http.FileServer(http.Dir("frontend"))
+
 	flag.Parse()
 	log.SetFlags(0)
 	http.HandleFunc("/connect", echo)
+	http.Handle("/", fs)
 
 	uri := fmt.Sprintf("%s:%s", *host, *port)
 	log.Printf("Listening on: %s", uri)

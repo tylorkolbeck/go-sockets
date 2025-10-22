@@ -1,29 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <style>
-    * {
-      padding: 0;
-      margin: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-size: 16px;
-    }
-  </style>
+  <title>Programming With Sockets</title>
+  <script src="lib/p5/p5.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <input type="text" id="wsInput">
-  <button id="sendBtn">Send</button>
-  <button id="connectBtn">Connect</button>
-  <button id="disconnectBtn">Disconect</button>
-  <div>
-    <p id="connectStatusP">Disconnected</p>
+  <script src="canvas/scene/BaseScene.js"></script>
+  <script src="canvas/scene/scenes/walker/config.js"></script>
+  <script src="canvas/scene/scenes/walker/WalkerScene.js"></script>
+  <script src="canvas/util/objectMerge.js"></script>
+  <script src="canvas/classes/ui/BaseUi.js"></script>
+  <script src="canvas/classes/ui/TimerUi.js"></script>
+  <script src="canvas/classes/ui/FrameRateUi.js"></script>
+  <script src="canvas/classes/ui/UiController.js"></script>
+  <script src="canvas/dom.js"></script>
+  <script src="canvas/classes/AccelVisualizer.js"></script>
+  <script src="canvas/globals.js"></script>
+  <script src="canvas/classes/Walker.js"></script>
+  <script src="canvas/app.js"></script>
+  <div class="flex controls space-between">
+    <div>
+      <input type="text" id="wsInput" placeholder="Send Message...">
+      <button id="sendBtn" class="bg-green">Send</button>
+    </div>
   </div>
+
+  <div class="server-status">
+    <p>Server Status: <span id="connectStatusP">❌</span></p>
+
+    <div>
+      <p>Connection ID:</p>
+      <input value="asdf90j23409nj">
+    </div>
+    <button id="connectBtn" class="bg-green">Connect</button>
+    <button id="disconnectBtn" class="bg-red">Disconect</button>
+
+  </div>
+
+  <canvas id="canvas"></canvas>
+
   <script src="app.js"></script>
 </body>
+
 </html>
