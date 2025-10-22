@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/tylorkolbeck/go-sockets/server"
 )
 
 var port = flag.String("port", "8000", "http service port")
@@ -14,12 +16,17 @@ var host = flag.String("host", "localhost", "http service host")
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true // ALlow all origins
+		return true // Allow all origins for development
 	},
 }
 
 func main() {
 	fs := http.FileServer(http.Dir("frontend"))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	server := server.NewServer()
+	go server.Run(ctx)
 
 	flag.Parse()
 	log.SetFlags(0)

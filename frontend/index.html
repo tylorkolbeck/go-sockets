@@ -10,19 +10,7 @@
 </head>
 
 <body>
-  <script src="canvas/scene/BaseScene.js"></script>
-  <script src="canvas/scene/scenes/walker/config.js"></script>
-  <script src="canvas/scene/scenes/walker/WalkerScene.js"></script>
-  <script src="canvas/util/objectMerge.js"></script>
-  <script src="canvas/classes/ui/BaseUi.js"></script>
-  <script src="canvas/classes/ui/TimerUi.js"></script>
-  <script src="canvas/classes/ui/FrameRateUi.js"></script>
-  <script src="canvas/classes/ui/UiController.js"></script>
-  <script src="canvas/dom.js"></script>
-  <script src="canvas/classes/AccelVisualizer.js"></script>
-  <script src="canvas/globals.js"></script>
-  <script src="canvas/classes/Walker.js"></script>
-  <script src="canvas/app.js"></script>
+  <script type="module" src="canvas/SceneRunner.js"></script>
   <div class="flex controls space-between">
     <div>
       <input type="text" id="wsInput" placeholder="Send Message...">
@@ -44,7 +32,7 @@
 
   <canvas id="canvas"></canvas>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 
 </html>

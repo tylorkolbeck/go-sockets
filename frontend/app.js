@@ -1,3 +1,7 @@
+import SceneRunner from "./canvas/SceneRunner.js";
+import { WalkerScene } from "./canvas/scene/scenes/walker/WalkerScene.js";
+import { config } from "./canvas/scene/scenes/walker/config.js";
+
 const wsUri = "ws://localhost:8000/connect";
 
 const wsConfig = {
@@ -5,6 +9,9 @@ const wsConfig = {
 };
 
 let ws;
+let board;
+
+let scene = new WalkerScene(config);
 
 const el2 = (id) => document.getElementById(id);
 
@@ -21,6 +28,12 @@ const EL = {
 getElements();
 registerEventHandlers();
 renderConnectionStatus();
+
+board = new SceneRunner(scene);
+
+board.init();
+
+board.playerJoin({});
 
 if (wsConfig.autoConnect) {
   connectToSocket();
