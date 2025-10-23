@@ -28,6 +28,8 @@ func main() {
 		<-sigChan
 		log.Println("Received shutdown signal, stopping server")
 		cancel()
+
+		os.Exit(0)
 	}()
 
 	server := server.NewServer()
