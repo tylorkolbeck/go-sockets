@@ -7,7 +7,7 @@ import { initDom } from "../dom.js";
 export class BaseScene {
   uiController = new UiController([]);
   _config = null;
-  _players = [];
+  _players = {};
   _agents = [];
 
   get players() {
@@ -37,12 +37,18 @@ export class BaseScene {
     this.eventBus = eventBus;
   }
 
+  handlePlayerSnapshot(snapshot) {
+    for (const id in this.players) {
+      this.players[id].setPosition(snapshot.players[id].pos);
+    }
+  }
+
   getPlayer(playerId) {
     return this.players.find((p) => p.id === playerId);
   }
 
   addPlayer(player) {
-    this.players.push(player);
+    this.players[player._id] = player;
   }
 
   addUiControl(control) {
@@ -97,9 +103,9 @@ export class BaseScene {
     background(this.background.r, this.background.g, this.background.b);
     this.uiController.draw();
 
-    this.players.forEach((p) => {
-      p.draw();
-    });
+    for (const id in this.players) {
+      this.players[id].draw();
+    }
   }
 
   keyPressed() {

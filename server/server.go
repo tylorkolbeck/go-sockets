@@ -14,8 +14,9 @@ import (
 )
 
 type JoinMsg struct {
-	Type string `json:"type"`
-	ID   string `json:"id"`
+	Type   string        `json:"type"`
+	ID     string        `json:"id"`
+	Player player.Player `json:"player"`
 }
 
 type LeaveMsg struct {
@@ -34,6 +35,16 @@ type InputMsg struct {
 type WsMsg struct {
 	ID  string   `json:"id"`
 	Msg InputMsg `json:"msg"`
+}
+
+type PlayerSnapshot struct {
+	Pos math.Vec3 `json:"pos"`
+}
+
+type SnapshotMsg struct {
+	Type    string                    `json:"type"`
+	Tick    uint64                    `json:"tick"`
+	Players map[string]PlayerSnapshot `json:"players"`
 }
 
 type Server struct {
@@ -61,6 +72,11 @@ func NewServer() *Server {
 	}
 }
 
+func (s *Server) update() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+}
+
 func (s *Server) Run(ctx context.Context) {
 	ticker := time.NewTicker(50 * time.Millisecond) // 20hz
 	defer ticker.Stop()
@@ -69,21 +85,15 @@ func (s *Server) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
-			s.tick++
 		case ev := <-s.msgChannel:
 			switch e := ev.(type) {
 			case JoinMsg:
 				s.mu.Lock()
-				s.players[e.ID] = &player.Player{
-					ID:  e.ID,
-					Pos: math.Vec3{X: 100, Y: 100, Z: 0},
-				}
+				s.players[e.ID] = &e.Player
 				log.Printf("Player joined - ID: %s", e.ID)
 				s.mu.Unlock()
 			case LeaveMsg:
 				s.mu.Lock()
-				// Check if player exists
 				if p, ok := s.players[e.ID]; ok {
 					log.Printf("Player left - ID: %s", p.ID)
 					if p.Conn != nil {
@@ -96,11 +106,40 @@ func (s *Server) Run(ctx context.Context) {
 				s.mu.Lock()
 				p, _ := s.GetPlayer(e.ID)
 				if p != nil {
-					log.Printf("Input Message - ID: %s", p.ID)
+					// Do player movement calculations here
+					log.Printf("%+v", e.Msg)
 				}
 
 				s.mu.Unlock()
 			}
+		case <-ticker.C:
+			s.update()
+			s.tick++
+			s.broadcast()
+		}
+	}
+}
+
+func (s *Server) broadcast() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	snapshot := SnapshotMsg{
+		Type:    "snapshot",
+		Tick:    s.tick,
+		Players: map[string]PlayerSnapshot{},
+	}
+
+	for id, p := range s.players {
+		snapshot.Players[id] = PlayerSnapshot{
+			Pos: p.Pos,
+		}
+	}
+
+	data, _ := json.Marshal(snapshot)
+	for _, p := range s.players {
+		if p.Conn != nil {
+			_ = p.Conn.WriteMessage(websocket.TextMessage, data)
 		}
 	}
 }
@@ -113,18 +152,18 @@ func (s *Server) HandleWs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := r.URL.Query().Get("id")
-	s.msgChannel <- JoinMsg{Type: "join", ID: id}
-
 	p := &player.Player{
 		ID:   id,
 		Pos:  math.Vec3{X: 0, Y: 0, Z: 0},
 		Conn: conn,
 	}
 
-	go s.playerReadLoop(p)
+	s.msgChannel <- JoinMsg{Type: "join", ID: id, Player: *p}
+
+	go s.playerWsReadLoop(p)
 }
 
-func (s *Server) playerReadLoop(p *player.Player) {
+func (s *Server) playerWsReadLoop(p *player.Player) {
 	defer func() {
 		s.msgChannel <- LeaveMsg{Type: "leave", ID: p.ID}
 		if p.Conn != nil {
@@ -143,8 +182,10 @@ func (s *Server) playerReadLoop(p *player.Player) {
 			continue
 		}
 
-		log.Printf("%+v", msg)
-
+		s.msgChannel <- WsMsg{
+			ID:  msg.ID,
+			Msg: msg.Msg,
+		}
 	}
 }
 

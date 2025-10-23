@@ -13,7 +13,11 @@ export default class Canvas {
   }
 
   playerJoin(playerConfig) {
-    this.scene.addPlayer(new Player());
+    this.scene.addPlayer(new Player(playerConfig.id));
+  }
+
+  handlePlayerSnapshot(snapshot) {
+    this.scene.handlePlayerSnapshot(snapshot);
   }
 
   bindP5Functions() {

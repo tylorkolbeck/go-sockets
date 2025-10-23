@@ -35,8 +35,6 @@ board = new SceneRunner(scene);
 
 board.init();
 
-board.playerJoin({});
-
 if (wsConfig.autoConnect) {
   const userId = getUserId();
   if (userId) connectToSocket(userId);
@@ -110,10 +108,17 @@ function connectToSocket(userId) {
   ws.onopen = function (event) {
     console.log("Socket connection established: ", event);
     setIsConnected(true);
+    board.playerJoin({
+      id: getUserId(),
+    });
   };
 
   ws.onmessage = function (event) {
-    console.log("Message: ", event.data);
+    const data = JSON.parse(event.data);
+    if (data.type === "snapshot") {
+      // Update players
+      board.handlePlayerSnapshot(data);
+    }
   };
 
   ws.onclose = function (event) {

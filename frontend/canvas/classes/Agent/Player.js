@@ -12,10 +12,14 @@ export default class Player {
     this._id = value;
   }
 
-  constructor() {
-    this.id = uuid();
-    this.position = { x: 50, y: 50, z: 0 };
+  constructor(id) {
+    this.id = id;
+    this.position = { x: 0, y: 0, z: 0 };
     console.log(`[INITIALIZED PLAYER] - ID: ${this.id}`);
+  }
+
+  setPosition(vec3) {
+    this.position = vec3;
   }
 
   update() {}
