@@ -32,16 +32,17 @@ export class BaseScene {
     return this.config.canvas.background;
   }
 
+  constructor(config, eventBus) {
+    this._config = config;
+    this.eventBus = eventBus;
+  }
+
   getPlayer(playerId) {
     return this.players.find((p) => p.id === playerId);
   }
 
   addPlayer(player) {
     this.players.push(player);
-  }
-
-  constructor(config) {
-    this._config = config;
   }
 
   addUiControl(control) {
@@ -98,6 +99,13 @@ export class BaseScene {
 
     this.players.forEach((p) => {
       p.draw();
+    });
+  }
+
+  keyPressed() {
+    this.eventBus.dispatch("sceneKeyPressed", {
+      key,
+      keyCode,
     });
   }
 }

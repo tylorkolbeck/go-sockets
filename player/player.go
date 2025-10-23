@@ -1,8 +1,12 @@
 package player
 
-type Vec3 struct{ X, Y, Z float64 }
+import (
+	"github.com/gorilla/websocket"
+	math "github.com/tylorkolbeck/go-sockets/engine/Math"
+)
 
 type Player struct {
-	Id  string
-	pos Vec3
+	ID   string
+	Pos  math.Vec3
+	Conn *websocket.Conn
 }

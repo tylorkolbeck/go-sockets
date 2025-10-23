@@ -8,8 +8,8 @@ export class WalkerScene extends BaseScene {
   agents = [];
   accelVisualizer;
 
-  constructor(config) {
-    super(config);
+  constructor(config, eventBus) {
+    super(config, eventBus);
   }
 
   preload() {
@@ -24,7 +24,10 @@ export class WalkerScene extends BaseScene {
   }
 
   keyPressed() {
+    super.keyPressed();
     if (key === "p") this.paused = !this.paused;
+    if (key === "w") {
+    }
   }
 
   draw() {

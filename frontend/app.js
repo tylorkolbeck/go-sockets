@@ -1,28 +1,30 @@
 import SceneRunner from "./canvas/SceneRunner.js";
 import { WalkerScene } from "./canvas/scene/scenes/walker/WalkerScene.js";
 import { config } from "./canvas/scene/scenes/walker/config.js";
+import { EventEmitter } from "./canvas/classes/EventEmitter/EventEmitter.js";
 
-const wsUri = "ws://localhost:8000/connect";
+const gameEventBus = new EventEmitter();
 
 const wsConfig = {
-  autoConnect: true,
+  autoConnect: false,
 };
 
 let ws;
 let board;
 
-let scene = new WalkerScene(config);
+let scene = new WalkerScene(config, gameEventBus);
 
 const el2 = (id) => document.getElementById(id);
 
 let connectStatus = false;
 
-const EL = {
+const el = {
   disconnectBtn: null,
   wsInput: null,
   sendBtn: null,
   isConnected: null,
   connectBtn: null,
+  userId: null,
 };
 
 getElements();
@@ -36,7 +38,8 @@ board.init();
 board.playerJoin({});
 
 if (wsConfig.autoConnect) {
-  connectToSocket();
+  const userId = getUserId();
+  if (userId) connectToSocket(userId);
 }
 
 function setIsConnected(connected) {
@@ -45,39 +48,68 @@ function setIsConnected(connected) {
 }
 
 function renderConnectionStatus() {
-  EL.isConnected.innerText = connectStatus ? "✅" : "❌";
+  el.isConnected.innerText = connectStatus ? "✅" : "❌";
 }
 
 function getElements() {
-  EL.disconnectBtn = el2("disconnectBtn");
-  EL.wsInput = el2("wsInput");
-  EL.sendBtn = el2("sendBtn");
-  EL.isConnected = el2("connectStatusP");
-  EL.connectBtn = el2("connectBtn");
+  el.disconnectBtn = el2("disconnectBtn");
+  el.wsInput = el2("wsInput");
+  el.sendBtn = el2("sendBtn");
+  el.isConnected = el2("connectStatusP");
+  el.connectBtn = el2("connectBtn");
+  el.userId = el2("userId");
+}
+
+function handleSceneKeyPress(event) {
+  switch (event.data.key) {
+    case "w":
+      ws.send(
+        JSON.stringify({
+          id: getUserId(),
+          msg: {
+            type: "input",
+            up: true,
+          },
+        })
+      );
+      break;
+    case "d":
+      break;
+    case "s":
+      break;
+    case "a":
+      break;
+    default:
+      break;
+  }
 }
 
 function registerEventHandlers() {
-  EL.disconnectBtn.addEventListener("click", () => {
+  gameEventBus.subscribe("sceneKeyPressed", handleSceneKeyPress);
+
+  el.disconnectBtn.addEventListener("click", () => {
     ws.close();
   });
 
-  EL.sendBtn.addEventListener("click", () => {
+  el.sendBtn.addEventListener("click", () => {
     if (connectStatus) {
       ws.send(wsInput.value);
       wsInput.value = "";
     }
   });
 
-  EL.connectBtn.addEventListener("click", () => {});
+  el.connectBtn.addEventListener("click", () => {
+    const userId = getUserId();
+    if (userId) connectToSocket(userId);
+  });
 }
 
-function connectToSocket() {
+function connectToSocket(userId) {
+  const wsUri = `ws://localhost:8000/connect?id=${userId}`;
   ws = new WebSocket(wsUri);
   ws.onopen = function (event) {
     console.log("Socket connection established: ", event);
     setIsConnected(true);
-
-    ws.send("Hello World");
   };
 
   ws.onmessage = function (event) {
@@ -88,4 +120,8 @@ function connectToSocket() {
     console.log("Disconnected", event);
     setIsConnected(false);
   };
+}
+
+function getUserId() {
+  return el.userId.value;
 }
