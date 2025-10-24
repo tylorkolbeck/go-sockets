@@ -3,6 +3,7 @@ import { WalkerScene } from "./canvas/scene/scenes/walker/WalkerScene.js";
 import { config } from "./canvas/scene/scenes/walker/config.js";
 import { EventEmitter } from "./canvas/classes/EventEmitter/EventEmitter.js";
 import { uuid } from "./canvas/util/uuid.js";
+import { handleOnMessage } from "./canvas/handlers/socket.js";
 
 const gameEventBus = new EventEmitter();
 
@@ -11,7 +12,7 @@ const wsConfig = {
 };
 
 let ws;
-let board;
+let sceneRunner;
 
 let scene = new WalkerScene(config, gameEventBus);
 
@@ -32,9 +33,9 @@ getElements();
 registerEventHandlers();
 renderConnectionStatus();
 
-board = new SceneRunner(scene);
+sceneRunner = new SceneRunner(scene);
 
-board.init();
+sceneRunner.init();
 
 if (wsConfig.autoConnect) {
   const userId = getUserId();
@@ -137,29 +138,29 @@ function connectToSocket(userId) {
   ws.onopen = function (event) {
     console.log("Socket connection established: ", event);
     setIsConnected(true);
-    board.playerJoin({
+    sceneRunner.playerJoin({
       id: getUserId(),
       isOwner: true,
     });
   };
 
   ws.onmessage = function (event) {
-    const data = JSON.parse(event.data);
-    if (data.type === "snapshot") {
-      // Update players
-      board.handlePlayerSnapshot(data);
-    }
+    handleOnMessage(event, sceneRunner, getUserId());
+    // const data = JSON.parse(event.data);
+    // if (data.type === "snapshot") {
+    //   // Update players
+    //   sceneRunner.handlePlayerSnapshot(data);
+    // }
 
-    if (data.type === "updatedplayerlist") {
-      console.log("UPDATED PLAYER LIST: ", data);
-      data.playerIds.forEach((id) => {
-        if (id != getUserId) {
-          board.playerJoin({
-            id: id,
-          });
-        }
-      });
-    }
+    // if (data.type === "updatedplayerlist") {
+    //   data.playerIds.forEach((id) => {
+    //     if (id != getUserId) {
+    //       sceneRunner.playerJoin({
+    //         id: id,
+    //       });
+    //     }
+    //   });
+    // }
   };
 
   ws.onclose = function (event) {
