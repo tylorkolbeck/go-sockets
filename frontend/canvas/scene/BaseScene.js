@@ -32,9 +32,8 @@ export class BaseScene {
     return this.config.canvas.background;
   }
 
-  constructor(config, eventBus) {
+  constructor(config) {
     this._config = config;
-    this.eventBus = eventBus;
   }
 
   handlePlayerSnapshot(snapshot) {
@@ -108,17 +107,18 @@ export class BaseScene {
     }
   }
 
-  keyDown(key, keyCode) {
-    this.eventBus.dispatch("sceneKeyPressed", {
-      key,
-      keyCode,
-    });
-  }
+  // TODO: This should not live here, maybe move to scene runner
+  // keyDown(key, keyCode) {
+  //   this.eventBus.dispatch("sceneKeyPressed", {
+  //     key,
+  //     keyCode,
+  //   });
+  // }
 
-  keyPressed() {
-    this.eventBus.dispatch("sceneKeyPressed", {
-      key,
-      keyCode,
-    });
-  }
+  // keyPressed() {
+  //   this.eventBus.dispatch("sceneKeyPressed", {
+  //     key,
+  //     keyCode,
+  //   });
+  // }
 }

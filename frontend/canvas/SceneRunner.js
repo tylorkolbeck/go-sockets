@@ -1,10 +1,18 @@
 import Player from "./classes/Agent/Player.js";
 
-export default class Canvas {
+export default class SceneRunner {
   scene;
+  _ownerId;
+  eventBus;
 
-  constructor(scene) {
+  constructor(eventBus, scene, ownerId) {
     this.scene = scene;
+    this._ownerId = ownerId;
+    this.eventBus = eventBus;
+  }
+
+  get ownerId() {
+    return this._ownerId;
   }
 
   init() {
@@ -27,9 +35,10 @@ export default class Canvas {
     };
 
     window.keyPressed = () => {
-      if (this.scene.keyPressed) {
-        this.scene.keyPressed();
-      }
+      this.eventBus.dispatch("sceneKeyPressed", {
+        key,
+        keyCode,
+      });
     };
 
     window.setup = () => {
@@ -38,25 +47,34 @@ export default class Canvas {
 
     window.draw = () => {
       this.scene.draw();
-
-      if (this.scene.keyDown) {
-        this.checkHeldKeys();
-      }
+      this.checkHeldKeys();
     };
   }
 
   checkHeldKeys() {
     if (keyIsDown(87)) {
-      this.scene.keyDown("w", 87);
+      this.eventBus.dispatch("sceneKeyPressed", {
+        key: "w",
+        keyCode: 87,
+      });
     }
     if (keyIsDown(83)) {
-      this.scene.keyDown("s", 83);
+      this.eventBus.dispatch("sceneKeyPressed", {
+        key: "s",
+        keyCode: 83,
+      });
     }
     if (keyIsDown(65)) {
-      this.scene.keyDown("a", 65);
+      this.eventBus.dispatch("sceneKeyPressed", {
+        key: "a",
+        keyCode: 65,
+      });
     }
     if (keyIsDown(68)) {
-      this.scene.keyDown("d", 68);
+      this.eventBus.dispatch("sceneKeyPressed", {
+        key: "d",
+        keyCode: 68,
+      });
     }
   }
 }
