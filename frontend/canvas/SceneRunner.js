@@ -1,21 +1,27 @@
 import Player from "./classes/Agent/Player.js";
+import eventBus from "./classes/Event/EventSystem.js";
 
 export default class SceneRunner {
   scene;
   _ownerId;
-  eventBus;
 
-  constructor(eventBus, scene, ownerId) {
-    this.scene = scene;
+  constructor(ownerId) {
     this._ownerId = ownerId;
-    this.eventBus = eventBus;
   }
 
   get ownerId() {
     return this._ownerId;
   }
 
+  setScene(scene) {
+    this.scene = scene;
+    return this;
+  }
+
   init() {
+    if (!this.scene) {
+      throw new Error("Scene has not been set");
+    }
     p5.disableFriendlyErrors = true;
     this.bindP5Functions();
   }
@@ -35,7 +41,7 @@ export default class SceneRunner {
     };
 
     window.keyPressed = () => {
-      this.eventBus.dispatch("sceneKeyPressed", {
+      eventBus.dispatch("sceneKeyPressed", {
         key,
         keyCode,
       });
@@ -53,25 +59,25 @@ export default class SceneRunner {
 
   checkHeldKeys() {
     if (keyIsDown(87)) {
-      this.eventBus.dispatch("sceneKeyPressed", {
+      eventBus.dispatch("sceneKeyPressed", {
         key: "w",
         keyCode: 87,
       });
     }
     if (keyIsDown(83)) {
-      this.eventBus.dispatch("sceneKeyPressed", {
+      eventBus.dispatch("sceneKeyPressed", {
         key: "s",
         keyCode: 83,
       });
     }
     if (keyIsDown(65)) {
-      this.eventBus.dispatch("sceneKeyPressed", {
+      eventBus.dispatch("sceneKeyPressed", {
         key: "a",
         keyCode: 65,
       });
     }
     if (keyIsDown(68)) {
-      this.eventBus.dispatch("sceneKeyPressed", {
+      eventBus.dispatch("sceneKeyPressed", {
         key: "d",
         keyCode: 68,
       });

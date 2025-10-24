@@ -189,13 +189,20 @@ func (s *Server) broadcast() {
 }
 
 func (s *Server) HandleWs(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		http.Error(w, err.Error(), 600)
+	// Check for required parameters BEFORE upgrading connection
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		log.Printf("Connection attempted without a user id. Not upgrading connection")
+		http.Error(w, "Missing id parameter", 400)
 		return
 	}
 
-	id := r.URL.Query().Get("id")
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	p := &player.Player{
 		ID:   id,
 		Pos:  math.Vec3{X: 0, Y: 0, Z: 0},

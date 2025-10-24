@@ -1,8 +1,13 @@
-export class EventEmitter {
+class EventSystem {
   events;
 
   constructor() {
-    this.events = {};
+    if (EventSystem.instance == null) {
+      this.events = {};
+      EventSystem.instance = this;
+    }
+
+    return EventSystem.instance;
   }
 
   subscribe(event, callback) {
@@ -11,6 +16,7 @@ export class EventEmitter {
     }
 
     this.events[event].push(callback);
+    console.log(this.events);
   }
 
   unsubscribe(event, callback) {
@@ -31,3 +37,8 @@ export class EventEmitter {
     }
   }
 }
+
+const eventSystem = new EventSystem();
+Object.freeze(eventSystem);
+
+export default eventSystem;

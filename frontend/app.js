@@ -2,17 +2,17 @@ import SceneRunner from "./canvas/SceneRunner.js";
 import SocketManager from "./canvas/handlers/SockerManager.js";
 import { WalkerScene } from "./canvas/scene/scenes/walker/WalkerScene.js";
 import { config } from "./canvas/scene/scenes/walker/config.js";
-import { EventEmitter } from "./canvas/classes/EventEmitter/EventEmitter.js";
+import eventBus from "./canvas/classes/Event/EventSystem.js";
 import { uuid } from "./canvas/util/uuid.js";
 
 const ownerId = uuid();
-const gameEventBus = new EventEmitter();
-const scene = new WalkerScene(config, gameEventBus);
-const sceneRunner = new SceneRunner(gameEventBus, scene, ownerId);
-const socketManager = new SocketManager(
-  sceneRunner,
-  "ws://localhost:8000/connect"
-);
+const scene = new WalkerScene(config);
+const sceneRunner = new SceneRunner(ownerId);
+const socketManager = new SocketManager(sceneRunner, {
+  host: "localhost",
+  port: "8000",
+  ownerId,
+});
 
 const el2 = (id) => document.getElementById(id);
 
@@ -25,12 +25,12 @@ const el = {
   userId: null,
 };
 
-getElements();
-registerDomEventHandlers();
+initDom();
 registerGameEventHandlers();
-renderConnectionStatus();
+renderConnectionStatus(false);
 
-sceneRunner.init();
+// SET AND INIT SCENE
+sceneRunner.setScene(scene).init();
 
 // GAME EVENTS
 function handleSceneKeyPress(event) {
@@ -78,14 +78,20 @@ function handleSceneKeyPress(event) {
 
 // GAME EVENTS
 function registerGameEventHandlers() {
-  gameEventBus.subscribe("sceneKeyPressed", handleSceneKeyPress);
+  eventBus.subscribe("sceneKeyPressed", handleSceneKeyPress);
+  eventBus.subscribe("serverconnected", handleServerConnChange);
+  eventBus.subscribe("serverdisconnected", handleServerConnChange);
 }
 
 // TODO: pass is connected as an app level event
 function connectToServerHandler() {
-  socketManager.connectToServer((isConnected) =>
-    renderConnectionStatus(isConnected)
-  );
+  socketManager.connectToServer();
+}
+
+// DOM
+function initDom() {
+  getElements();
+  registerDomEventHandlers();
 }
 
 // DOM
@@ -104,8 +110,12 @@ function registerDomEventHandlers() {
   el.connectBtn.addEventListener("click", connectToServerHandler);
 }
 
+function handleServerConnChange(event) {
+  renderConnectionStatus(event?.data);
+}
+
 // DOM
-function renderConnectionStatus(connected = false) {
+function renderConnectionStatus(connected) {
   el.isConnected.innerText = connected ? "✅" : "❌";
 }
 

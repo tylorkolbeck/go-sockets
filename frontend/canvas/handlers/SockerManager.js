@@ -1,26 +1,32 @@
+import eventBus from "../classes/Event/EventSystem.js";
+
 export default class SocketManager {
   sceneRunner;
-  wsUri;
   ws;
   isConnected = false;
+  config;
 
-  constructor(sceneRunner, wsUri) {
-    this.wsUri = wsUri;
+  constructor(sceneRunner, config) {
+    this.config = config;
     if (!sceneRunner)
       throw new Error("Scene runner not provided to Message Handler");
     this.sceneRunner = sceneRunner;
   }
 
   send(data) {
-    if (this.ws) {
+    if (this.isConnected) {
       const stringData = JSON.stringify(data);
       this.ws.send(stringData);
+    } else {
+      console.warn("There is no connection to the server");
     }
   }
 
-  connectToServer(cb) {
-    this.ws = new WebSocket(this.wsUri + `?id=${this.sceneRunner.ownerId}`);
-    this._registerSockerHandlers(cb);
+  connectToServer() {
+    this.ws = new WebSocket(
+      `ws://${this.config.host}:${this.config.port}/connect?id=${this.config.ownerId}`
+    );
+    this.registerSockerHandlers();
   }
 
   handleOnMessage(event) {
@@ -40,9 +46,12 @@ export default class SocketManager {
     this.sceneRunner.handlePlayerSnapshot(data);
   }
 
-  handleDisconnect() {}
+  handleDisconnect() {
+    this.isConnected = false;
+  }
 
   handleUpdatedPlayerList(data) {
+    console.log(">>> data", data);
     data.playerIds.forEach((id) => {
       if (id != this.sceneRunner.ownerId) {
         this.sceneRunner.playerJoin({
@@ -52,15 +61,16 @@ export default class SocketManager {
     });
   }
 
-  handleOnClose(event) {
-    console.log("Disconnected", event);
+  handleOnClose() {
     this.isConnected = false;
+    eventBus.dispatch("serverdisconnected", false);
   }
 
-  handleOnOpen(event, cb) {
-    console.log("Socket connection established: ", event);
+  handleOnOpen(event) {
+    console.log("Socket connected: ", event);
     this.isConnected = true;
-    cb(true);
+    eventBus.dispatch("serverconnected", true);
+
     this.sceneRunner.playerJoin({
       id: this.sceneRunner.ownerId,
       isOwner: true,
@@ -73,9 +83,9 @@ export default class SocketManager {
     if (cb) cb();
   }
 
-  _registerSockerHandlers(cb) {
+  registerSockerHandlers() {
     this.ws.onmessage = (event) => this.handleOnMessage(event);
-    this.ws.onopen = (event) => this.handleOnOpen(event, cb);
+    this.ws.onopen = (event) => this.handleOnOpen(event);
     this.ws.onclose = (event) => this.handleOnClose(event);
   }
 }

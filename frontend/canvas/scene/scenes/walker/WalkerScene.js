@@ -8,8 +8,8 @@ export class WalkerScene extends BaseScene {
   agents = [];
   accelVisualizer;
 
-  constructor(config, eventBus) {
-    super(config, eventBus);
+  constructor(config) {
+    super(config);
   }
 
   preload() {
@@ -33,14 +33,5 @@ export class WalkerScene extends BaseScene {
   draw() {
     super.draw();
     if (this.paused) return;
-
-    // const accelVal = vec(random(-1, 1), random(-1, 1));
-    // this.agents.forEach((w) => {
-    //   w.applyForce(accelVal);
-    //   w.draw();
-    // });
-
-    // this.accelVisualizer.applyAccel(accelVal);
-    // this.accelVisualizer.draw();
   }
 }
