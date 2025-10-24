@@ -19,6 +19,16 @@ type JoinMsg struct {
 	Player player.Player `json:"player"`
 }
 
+type PlayerJoinMsg struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type PlayerListMsg struct {
+	Type      string   `json:"type"`
+	PlayerIds []string `json:"playerIds"`
+}
+
 type LeaveMsg struct {
 	Type string `json:"leave"`
 	ID   string `json:"id"`
@@ -90,7 +100,11 @@ func (s *Server) Run(ctx context.Context) {
 			case JoinMsg:
 				s.mu.Lock()
 				s.players[e.ID] = &e.Player
+
+				// Need to tell everyone a player joined
+				s.broadcastPlayerList()
 				log.Printf("Player joined - ID: %s", e.ID)
+
 				s.mu.Unlock()
 			case LeaveMsg:
 				s.mu.Lock()
@@ -106,8 +120,19 @@ func (s *Server) Run(ctx context.Context) {
 				s.mu.Lock()
 				p, _ := s.GetPlayer(e.ID)
 				if p != nil {
-					// Do player movement calculations here
-					log.Printf("%+v", e.Msg)
+					if e.Msg.Up {
+						p.MoveUp()
+					}
+					if e.Msg.Down {
+						p.MoveDown()
+					}
+					if e.Msg.Left {
+						p.MoveLeft()
+
+					}
+					if e.Msg.Right {
+						p.MoveRight()
+					}
 				}
 
 				s.mu.Unlock()
@@ -116,6 +141,25 @@ func (s *Server) Run(ctx context.Context) {
 			s.update()
 			s.tick++
 			s.broadcast()
+		}
+	}
+}
+
+func (s *Server) broadcastPlayerList() {
+	var playerIds []string
+
+	for _, p := range s.players {
+		playerIds = append(playerIds, p.ID)
+	}
+
+	for _, p := range s.players {
+		if p.Conn != nil {
+			updatedPlayerList := PlayerListMsg{
+				Type:      "updatedplayerlist",
+				PlayerIds: playerIds,
+			}
+			data, _ := json.Marshal(updatedPlayerList)
+			_ = p.Conn.WriteMessage(websocket.TextMessage, data)
 		}
 	}
 }

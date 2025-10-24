@@ -108,6 +108,13 @@ export class BaseScene {
     }
   }
 
+  keyDown(key, keyCode) {
+    this.eventBus.dispatch("sceneKeyPressed", {
+      key,
+      keyCode,
+    });
+  }
+
   keyPressed() {
     this.eventBus.dispatch("sceneKeyPressed", {
       key,

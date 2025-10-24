@@ -2,6 +2,7 @@ import SceneRunner from "./canvas/SceneRunner.js";
 import { WalkerScene } from "./canvas/scene/scenes/walker/WalkerScene.js";
 import { config } from "./canvas/scene/scenes/walker/config.js";
 import { EventEmitter } from "./canvas/classes/EventEmitter/EventEmitter.js";
+import { uuid } from "./canvas/util/uuid.js";
 
 const gameEventBus = new EventEmitter();
 
@@ -56,6 +57,7 @@ function getElements() {
   el.isConnected = el2("connectStatusP");
   el.connectBtn = el2("connectBtn");
   el.userId = el2("userId");
+  el.userId.value = uuid();
 }
 
 function handleSceneKeyPress(event) {
@@ -72,10 +74,37 @@ function handleSceneKeyPress(event) {
       );
       break;
     case "d":
+      ws.send(
+        JSON.stringify({
+          id: getUserId(),
+          msg: {
+            type: "input",
+            right: true,
+          },
+        })
+      );
       break;
     case "s":
+      ws.send(
+        JSON.stringify({
+          id: getUserId(),
+          msg: {
+            type: "input",
+            down: true,
+          },
+        })
+      );
       break;
     case "a":
+      ws.send(
+        JSON.stringify({
+          id: getUserId(),
+          msg: {
+            type: "input",
+            left: true,
+          },
+        })
+      );
       break;
     default:
       break;
@@ -110,6 +139,7 @@ function connectToSocket(userId) {
     setIsConnected(true);
     board.playerJoin({
       id: getUserId(),
+      isOwner: true,
     });
   };
 
@@ -118,6 +148,17 @@ function connectToSocket(userId) {
     if (data.type === "snapshot") {
       // Update players
       board.handlePlayerSnapshot(data);
+    }
+
+    if (data.type === "updatedplayerlist") {
+      console.log("UPDATED PLAYER LIST: ", data);
+      data.playerIds.forEach((id) => {
+        if (id != getUserId) {
+          board.playerJoin({
+            id: id,
+          });
+        }
+      });
     }
   };
 

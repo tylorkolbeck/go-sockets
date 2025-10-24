@@ -4,6 +4,7 @@ export default class Player {
   _id = "";
   position;
   size = 10;
+  color;
 
   get id() {
     return this._id;
@@ -15,6 +16,7 @@ export default class Player {
   constructor(id) {
     this.id = id;
     this.position = { x: 0, y: 0, z: 0 };
+    this.color = { r: random(0, 255), g: random(0, 255), b: random(0, 255) };
     console.log(`[INITIALIZED PLAYER] - ID: ${this.id}`);
   }
 
@@ -26,7 +28,7 @@ export default class Player {
 
   draw() {
     noStroke();
-    fill(255, 0, 0);
+    fill(this.color.r, this.color.g, this.color.b);
     circle(this.position.x, this.position.y, this.size);
   }
 }

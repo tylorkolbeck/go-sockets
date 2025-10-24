@@ -28,7 +28,7 @@ export class Walker {
 
   draw() {
     noStroke();
-    fill(255, 204, 0);
+    fill(0, 204, 0);
     circle(this.position.x, this.position.y, this.size);
     this.stepList.push({
       x: this.position.x,

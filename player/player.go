@@ -10,3 +10,19 @@ type Player struct {
 	Pos  math.Vec3
 	Conn *websocket.Conn
 }
+
+func (p *Player) MoveUp() {
+	p.Pos.Y -= 1
+}
+
+func (p *Player) MoveDown() {
+	p.Pos.Y += 1
+}
+
+func (p *Player) MoveLeft() {
+	p.Pos.X -= 1
+}
+
+func (p *Player) MoveRight() {
+	p.Pos.X += 1
+}
