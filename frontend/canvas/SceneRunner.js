@@ -26,8 +26,26 @@ export default class SceneRunner {
     this.bindP5Functions();
   }
 
+  handleWorldSnapshot(worldData) {
+    this.scene.handleWorldSnapshot(worldData);
+  }
+
+  handlePlayerListUpdate(playerIds) {
+    playerIds.forEach((pid) => {
+      if (!this.scene.getPlayer(pid)) {
+        this.playerJoin({ id: pid });
+      }
+    });
+  }
+
   playerJoin(playerConfig, isOwner = false) {
-    this.scene.addPlayer(new Player(playerConfig.id, isOwner));
+    if (!this.scene.getPlayer(playerConfig.id)) {
+      this.scene.addPlayer(new Player(playerConfig.id, isOwner));
+    }
+  }
+
+  playerLeft(data) {
+    this.scene.removePlayer(data.id);
   }
 
   handlePlayerSnapshot(snapshot) {

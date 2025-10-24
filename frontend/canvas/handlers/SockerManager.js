@@ -39,6 +39,15 @@ export default class SocketManager {
       case "updatedplayerlist":
         this.handleUpdatedPlayerList(data);
         break;
+      case "playerjoined":
+        this.sceneRunner.playerJoin({ id: data.id });
+        break;
+      case "playerleft":
+        this.sceneRunner.playerLeft(data);
+        break;
+      case "worldsettings":
+        this.sceneRunner.handleWorldSnapshot(data);
+        break;
     }
   }
 
@@ -50,15 +59,8 @@ export default class SocketManager {
     this.isConnected = false;
   }
 
-  handleUpdatedPlayerList(data) {
-    console.log(">>> data", data);
-    data.playerIds.forEach((id) => {
-      if (id != this.sceneRunner.ownerId) {
-        this.sceneRunner.playerJoin({
-          id: id,
-        });
-      }
-    });
+  handleUpdatedPlayerList(playerList) {
+    this.sceneRunner.handlePlayerListUpdate(playerList.playerIds);
   }
 
   handleOnClose() {
@@ -66,15 +68,9 @@ export default class SocketManager {
     eventBus.dispatch("serverdisconnected", false);
   }
 
-  handleOnOpen(event) {
-    console.log("Socket connected: ", event);
+  handleOnOpen() {
     this.isConnected = true;
     eventBus.dispatch("serverconnected", true);
-
-    this.sceneRunner.playerJoin({
-      id: this.sceneRunner.ownerId,
-      isOwner: true,
-    });
   }
 
   close(cb) {

@@ -127,5 +127,5 @@ function getElements() {
   el.isConnected = el2("connectStatusP");
   el.connectBtn = el2("connectBtn");
   el.userId = el2("userId");
-  el.userId.innerText = uuid();
+  el.userId.innerText = ownerId;
 }

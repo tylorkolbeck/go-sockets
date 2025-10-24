@@ -13,6 +13,12 @@ import (
 	"github.com/tylorkolbeck/go-sockets/player"
 )
 
+type Color struct {
+	R int64 `json:"r"`
+	G int64 `json:"g"`
+	B int64 `json:"b"`
+}
+
 type JoinMsg struct {
 	Type   string        `json:"type"`
 	ID     string        `json:"id"`
@@ -29,8 +35,8 @@ type PlayerListMsg struct {
 	PlayerIds []string `json:"playerIds"`
 }
 
-type LeaveMsg struct {
-	Type string `json:"leave"`
+type PlayerLeaveMsg struct {
+	Type string `json:"type"`
 	ID   string `json:"id"`
 }
 
@@ -57,6 +63,13 @@ type SnapshotMsg struct {
 	Players map[string]PlayerSnapshot `json:"players"`
 }
 
+type WorldSettingsMsg struct {
+	Type    string  `json:"type"`
+	WorldW  float64 `json:"worldwidth"`
+	WorldH  float64 `json:"worldheight"`
+	WorldBg Color   `json:"worldbg"`
+}
+
 type Server struct {
 	mu         sync.Mutex
 	players    map[string]*player.Player
@@ -64,6 +77,7 @@ type Server struct {
 	tick       uint64
 	worldW     float64
 	worldH     float64
+	worldbg    Color
 }
 
 var upgrader = websocket.Upgrader{
@@ -78,7 +92,12 @@ func NewServer() *Server {
 		msgChannel: make(chan any, 1024),
 		worldW:     800,
 		worldH:     800,
-		tick:       0,
+		worldbg: Color{
+			R: 255,
+			G: 230,
+			B: 0,
+		},
+		tick: 0,
 	}
 }
 
@@ -101,18 +120,22 @@ func (s *Server) Run(ctx context.Context) {
 				s.mu.Lock()
 				s.players[e.ID] = &e.Player
 
+				s.broadcastWorldSettings(e.Player)
+
 				// Need to tell everyone a player joined
 				s.broadcastPlayerList()
+				s.broadcastPlayerJoined(e.ID)
 				log.Printf("Player joined - ID: %s", e.ID)
 
 				s.mu.Unlock()
-			case LeaveMsg:
+			case PlayerLeaveMsg:
 				s.mu.Lock()
 				if p, ok := s.players[e.ID]; ok {
 					log.Printf("Player left - ID: %s", p.ID)
 					if p.Conn != nil {
 						_ = p.Conn.Close()
 					}
+					s.broadcastPlayerLeft(e.ID)
 					delete(s.players, e.ID)
 				}
 				s.mu.Unlock()
@@ -141,6 +164,46 @@ func (s *Server) Run(ctx context.Context) {
 			s.update()
 			s.tick++
 			s.broadcast()
+		}
+	}
+}
+
+func (s *Server) broadcastWorldSettings(player player.Player) {
+	worldSettingsMsg := WorldSettingsMsg{
+		Type:    "worldsettings",
+		WorldW:  s.worldW,
+		WorldH:  s.worldH,
+		WorldBg: s.worldbg,
+	}
+
+	data, _ := json.Marshal(worldSettingsMsg)
+	if player.Conn != nil {
+		player.Conn.WriteMessage(websocket.TextMessage, data)
+	}
+}
+
+func (s *Server) broadcastPlayerLeft(id string) {
+	leftPlayerMsg := PlayerLeaveMsg{
+		Type: "playerleft",
+		ID:   id,
+	}
+	data, _ := json.Marshal(leftPlayerMsg)
+	for _, p := range s.players {
+		if p.Conn != nil {
+			p.Conn.WriteMessage(websocket.TextMessage, data)
+		}
+	}
+}
+
+func (s *Server) broadcastPlayerJoined(id string) {
+	joinedPlayerMsg := PlayerJoinMsg{
+		Type: "playerjoined",
+		ID:   id,
+	}
+	data, _ := json.Marshal(joinedPlayerMsg)
+	for _, p := range s.players {
+		if p.ID != id && p.Conn != nil {
+			p.Conn.WriteMessage(websocket.TextMessage, data)
 		}
 	}
 }
@@ -216,7 +279,7 @@ func (s *Server) HandleWs(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) playerWsReadLoop(p *player.Player) {
 	defer func() {
-		s.msgChannel <- LeaveMsg{Type: "leave", ID: p.ID}
+		s.msgChannel <- PlayerLeaveMsg{Type: "leave", ID: p.ID}
 		if p.Conn != nil {
 			_ = p.Conn.Close()
 		}

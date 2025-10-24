@@ -16,7 +16,6 @@ class EventSystem {
     }
 
     this.events[event].push(callback);
-    console.log(this.events);
   }
 
   unsubscribe(event, callback) {

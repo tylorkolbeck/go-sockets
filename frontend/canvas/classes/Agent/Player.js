@@ -1,5 +1,3 @@
-import { uuid } from "../../util/uuid.js";
-
 export default class Player {
   _id = "";
   position;

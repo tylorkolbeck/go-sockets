@@ -9,6 +9,8 @@ export class BaseScene {
   _config = null;
   _players = {};
   _agents = [];
+  _isSetupComplete = false;
+  _worldDataReceived = false;
 
   get players() {
     return this._players;
@@ -36,18 +38,49 @@ export class BaseScene {
     this._config = config;
   }
 
+  handleWorldSnapshot(worldData) {
+    // Update world properties
+    this.config.canvas.background =
+      worldData.worldbg || this.config.canvas.background;
+    this.config.canvas.height =
+      worldData.worldheight || this.config.canvas.height;
+    this.config.canvas.width = worldData.worldwidth || this.config.canvas.width;
+
+    this._worldDataReceived = true;
+
+    // If we haven't set up the canvas yet, do it now
+    if (!this._isSetupComplete) {
+      this.performSetup();
+    }
+  }
+
   handlePlayerSnapshot(snapshot) {
-    for (const id in this.players) {
+    for (const id in snapshot.players) {
       this.players[id].setPosition(snapshot.players[id].pos);
     }
   }
 
   getPlayer(playerId) {
-    return this.players.find((p) => p.id === playerId);
+    return this.players[playerId];
+  }
+
+  getPlayers() {
+    return this.players;
   }
 
   addPlayer(player) {
     this.players[player._id] = player;
+  }
+
+  removePlayer(playerId) {
+    console.log("Attempting to remove player:", playerId);
+    console.log("Players before deletion:", this.players);
+    console.log("Player exists?", playerId in this.players);
+
+    delete this.players[playerId];
+
+    console.log("Players after deletion:", this.players);
+    console.log("Player still exists?", playerId in this.players);
   }
 
   addUiControl(control) {
@@ -69,12 +102,22 @@ export class BaseScene {
   }
 
   setup() {
+    // Only perform initial setup if we already have world data
+    if (this._worldDataReceived) {
+      this.performSetup();
+    }
+  }
+
+  performSetup() {
+    if (this._isSetupComplete) return; // Prevent double setup
+
     const canvasEl = document.getElementById(this.config.canvas.domId);
     createCanvas(this.config.canvas.width, this.config.canvas.height, canvasEl);
     background(this.background.r, this.background.g, this.background.b);
 
     this.initUiComponents();
     this.uiController.setup();
+    this._isSetupComplete = true;
   }
 
   initUiComponents() {
@@ -99,6 +142,16 @@ export class BaseScene {
   }
 
   draw() {
+    // Only draw if setup is complete
+    if (!this._isSetupComplete) {
+      // Show a loading message or just return
+      if (window.fill && window.text) {
+        fill(255);
+        text("Waiting for world data from server...", 20, 30);
+      }
+      return;
+    }
+
     background(this.background.r, this.background.g, this.background.b);
     this.uiController.draw();
 
@@ -106,19 +159,4 @@ export class BaseScene {
       this.players[id].draw();
     }
   }
-
-  // TODO: This should not live here, maybe move to scene runner
-  // keyDown(key, keyCode) {
-  //   this.eventBus.dispatch("sceneKeyPressed", {
-  //     key,
-  //     keyCode,
-  //   });
-  // }
-
-  // keyPressed() {
-  //   this.eventBus.dispatch("sceneKeyPressed", {
-  //     key,
-  //     keyCode,
-  //   });
-  // }
 }

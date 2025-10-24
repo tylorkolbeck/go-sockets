@@ -1,8 +1,8 @@
 export const config = {
   canvas: {
     domId: "canvas",
-    height: 800,
-    width: 800,
+    height: 200,
+    width: 200,
     background: {
       r: 1,
       g: 1,
