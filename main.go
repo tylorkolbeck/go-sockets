@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/tylorkolbeck/go-sockets/server"
+	"github.com/tylorkolbeck/go-sockets/gameEngine"
 )
 
 var port = flag.String("port", "8000", "http service port")
@@ -32,11 +32,15 @@ func main() {
 		os.Exit(0)
 	}()
 
-	server := server.NewServer()
-	go server.Run(ctx)
+	gameEngine := gameEngine.NewGameEngine()
+	go gameEngine.Run(ctx)
 
 	flag.Parse()
-	http.HandleFunc("/connect", server.HandleWs)
+
+	// Websocket route
+	http.HandleFunc("/connect", gameEngine.HandleWs)
+
+	// File Server route
 	http.Handle("/", fs)
 
 	uri := fmt.Sprintf("%s:%s", *host, *port)

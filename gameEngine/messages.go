@@ -1,4 +1,4 @@
-package server
+package gameEngine
 
 import (
 	math "github.com/tylorkolbeck/go-sockets/engine/Math"

@@ -1,4 +1,4 @@
-package server
+package gameEngine
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/tylorkolbeck/go-sockets/player"
 )
 
-type Server struct {
+type GameEngine struct {
 	mu            sync.Mutex
 	msgChannel    chan any
 	tick          uint64
@@ -20,9 +20,9 @@ type Server struct {
 	playerManager *player.PlayerManager
 }
 
-func NewServer() *Server {
+func NewGameEngine() *GameEngine {
 	msgChannel := make(chan any, 1024)
-	return &Server{
+	return &GameEngine{
 		msgChannel: msgChannel,
 		worldW:     800,
 		worldH:     800,
@@ -36,12 +36,12 @@ func NewServer() *Server {
 	}
 }
 
-func (s *Server) update() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-}
+// func (s *Server) update() {
+// 	s.mu.Lock()
+// 	defer s.mu.Unlock()
+// }
 
-func (s *Server) Run(ctx context.Context) {
+func (ge *GameEngine) Run(ctx context.Context) {
 	ticker := time.NewTicker(50 * time.Millisecond) // 20hz
 	defer ticker.Stop()
 
@@ -49,26 +49,26 @@ func (s *Server) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case ev := <-s.msgChannel:
+		case ev := <-ge.msgChannel:
 			switch e := ev.(type) {
 			case player.JoinMsg:
-				s.mu.Lock()
-				s.broadcastWorldSettings(e.Player)
+				ge.mu.Lock()
+				ge.broadcastWorldSettings(e.Player)
 
 				// Need to tell everyone a player joined
-				s.broadcastPlayerList()
-				s.broadcastPlayerJoined(e.ID)
+				ge.broadcastPlayerList()
+				ge.broadcastPlayerJoined(e.ID)
 				log.Printf("Player joined - ID: %s", e.ID)
 
-				s.mu.Unlock()
+				ge.mu.Unlock()
 			case models.PlayerLeaveMsg:
-				s.mu.Lock()
-				s.playerManager.RemovePlayer(e.ID)
-				s.broadcastPlayerLeft(e.ID)
-				s.mu.Unlock()
+				ge.mu.Lock()
+				ge.playerManager.RemovePlayer(e.ID)
+				ge.broadcastPlayerLeft(e.ID)
+				ge.mu.Unlock()
 			case player.PlayerWsMsg:
-				s.mu.Lock()
-				p := s.playerManager.GetPlayer(e.ID)
+				ge.mu.Lock()
+				p := ge.playerManager.GetPlayer(e.ID)
 				if p != nil {
 					if e.Msg.Up {
 						p.MoveUp()
@@ -85,12 +85,12 @@ func (s *Server) Run(ctx context.Context) {
 					}
 				}
 
-				s.mu.Unlock()
+				ge.mu.Unlock()
 			}
 		case <-ticker.C:
-			s.update()
-			s.tick++
-			s.broadcast()
+			// s.update()
+			ge.tick++
+			ge.broadcast()
 		}
 	}
 }

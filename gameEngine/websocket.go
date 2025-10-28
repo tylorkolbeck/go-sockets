@@ -1,4 +1,4 @@
-package server
+package gameEngine
 
 import (
 	"log"
@@ -13,7 +13,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func (s *Server) HandleWs(w http.ResponseWriter, r *http.Request) {
+func (s *GameEngine) HandleWs(w http.ResponseWriter, r *http.Request) {
 	// Check for required parameters BEFORE upgrading connection
 	id := r.URL.Query().Get("id")
 	if id == "" {

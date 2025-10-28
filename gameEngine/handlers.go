@@ -1,4 +1,4 @@
-package server
+package gameEngine
 
 import (
 	"encoding/json"
@@ -7,12 +7,12 @@ import (
 	"github.com/tylorkolbeck/go-sockets/player"
 )
 
-func (s *Server) broadcastWorldSettings(player player.Player) {
+func (gm *GameEngine) broadcastWorldSettings(player player.Player) {
 	worldSettingsMsg := WorldSettingsMsg{
 		Type:    "worldsettings",
-		WorldW:  s.worldW,
-		WorldH:  s.worldH,
-		WorldBg: s.worldbg,
+		WorldW:  gm.worldW,
+		WorldH:  gm.worldH,
+		WorldBg: gm.worldbg,
 	}
 
 	data, _ := json.Marshal(worldSettingsMsg)
@@ -21,35 +21,35 @@ func (s *Server) broadcastWorldSettings(player player.Player) {
 	}
 }
 
-func (s *Server) broadcastPlayerLeft(id string) {
+func (gm *GameEngine) broadcastPlayerLeft(id string) {
 	leftPlayerMsg := player.PlayerLeaveMsg{
 		Type: "playerleft",
 		ID:   id,
 	}
 	data, _ := json.Marshal(leftPlayerMsg)
-	for _, p := range s.playerManager.GetAllPlayers() {
+	for _, p := range gm.playerManager.GetAllPlayers() {
 		if p.Conn != nil {
 			p.Conn.WriteMessage(websocket.TextMessage, data)
 		}
 	}
 }
 
-func (s *Server) broadcastPlayerJoined(id string) {
+func (gm *GameEngine) broadcastPlayerJoined(id string) {
 	joinedPlayerMsg := PlayerJoinMsg{
 		Type: "playerjoined",
 		ID:   id,
 	}
 	data, _ := json.Marshal(joinedPlayerMsg)
-	for _, p := range s.playerManager.GetAllPlayers() {
+	for _, p := range gm.playerManager.GetAllPlayers() {
 		if p.ID != id && p.Conn != nil {
 			p.Conn.WriteMessage(websocket.TextMessage, data)
 		}
 	}
 }
 
-func (s *Server) broadcastPlayerList() {
+func (gm *GameEngine) broadcastPlayerList() {
 	var playerIds []string
-	players := s.playerManager.GetAllPlayers()
+	players := gm.playerManager.GetAllPlayers()
 
 	for _, p := range players {
 		playerIds = append(playerIds, p.ID)
@@ -67,24 +67,24 @@ func (s *Server) broadcastPlayerList() {
 	}
 }
 
-func (s *Server) broadcast() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (gm *GameEngine) broadcast() {
+	gm.mu.Lock()
+	defer gm.mu.Unlock()
 
 	snapshot := SnapshotMsg{
 		Type:    "snapshot",
-		Tick:    s.tick,
+		Tick:    gm.tick,
 		Players: map[string]PlayerSnapshot{},
 	}
 
-	for id, p := range s.playerManager.GetAllPlayers() {
+	for id, p := range gm.playerManager.GetAllPlayers() {
 		snapshot.Players[id] = PlayerSnapshot{
 			Pos: p.Pos,
 		}
 	}
 
 	data, _ := json.Marshal(snapshot)
-	for _, p := range s.playerManager.GetAllPlayers() {
+	for _, p := range gm.playerManager.GetAllPlayers() {
 		if p.Conn != nil {
 			_ = p.Conn.WriteMessage(websocket.TextMessage, data)
 		}
