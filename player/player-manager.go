@@ -44,7 +44,13 @@ func (pm *PlayerManager) AddPlayer(id string, conn *websocket.Conn) {
 func (pm *PlayerManager) GetAllPlayers() map[string]*Player {
 	pm.mu.RLock()
 	defer pm.mu.RUnlock()
-	return pm.players
+
+	playersCopy := make(map[string]*Player, len(pm.players))
+	for k, v := range pm.players {
+		playersCopy[k] = v
+	}
+
+	return playersCopy
 }
 
 func (pm *PlayerManager) RemovePlayer(id string) {
@@ -61,4 +67,30 @@ func (pm *PlayerManager) RemovePlayer(id string) {
 		delete(pm.players, id)
 		delete(pm.connToPlayer, p.Conn)
 	}
+}
+
+// Utilities
+func (pm *PlayerManager) GetPlayerIDs() []string {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+
+	ids := make([]string, 0, len(pm.players))
+	for id := range pm.players {
+		ids = append(ids, id)
+	}
+
+	return ids
+}
+
+func (pm *PlayerManager) GetPlayerCount() int {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+	return len(pm.players)
+}
+
+func (pm *PlayerManager) PlayerExists(id string) bool {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+	_, exists := pm.players[id]
+	return exists
 }
