@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/tylorkolbeck/go-sockets/internal/config"
+	"github.com/tylorkolbeck/go-sockets/internal/logger"
 	"github.com/tylorkolbeck/go-sockets/models"
 	"github.com/tylorkolbeck/go-sockets/player"
 )
@@ -19,27 +20,39 @@ type GameEngine struct {
 	worldW        float64
 	worldH        float64
 	worldbg       models.Color
+	tickRate      int
 	playerManager *player.PlayerManager
+	maxPlayers    int
+	logger        *logger.Logger
 }
 
-func NewGameEngine() *GameEngine {
+func NewGameEngine(gameConfig config.GameConfig) *GameEngine {
+	log := logger.NewLogger("Game Engine")
+	log.Info("Initializing")
+
 	msgChannel := make(chan any, 1024)
 	return &GameEngine{
 		msgChannel: msgChannel,
-		worldW:     800,
-		worldH:     800,
+		worldW:     gameConfig.WorldWidth,
+		worldH:     gameConfig.WorldHeight,
 		worldbg: models.Color{
 			R: 255,
 			G: 230,
 			B: 0,
 		},
 		tick:          0,
+		tickRate:      gameConfig.TickRate,
+		maxPlayers:    gameConfig.MaxPlayers,
 		playerManager: player.NewPlayerManager(),
+		logger:        log,
 	}
 }
 
 func (ge *GameEngine) GameLoop(ctx context.Context) {
-	ticker := time.NewTicker(50 * time.Millisecond) // 20hz
+	if ge.tick == 0 {
+		ge.logger.Info("Game Loop Started")
+	}
+	ticker := time.NewTicker(time.Duration(ge.tickRate) * time.Millisecond) // 20hz
 	defer ticker.Stop()
 
 	for {
@@ -54,7 +67,7 @@ func (ge *GameEngine) GameLoop(ctx context.Context) {
 				// Need to tell everyone a player joined
 				ge.broadcastPlayerList()
 				ge.broadcastPlayerJoined(e.ID)
-				log.Printf("Player joined - ID: %s", e.ID)
+				ge.logger.Info("Player joined - ID: %s", e.ID)
 			case player.PlayerLeaveMsg:
 				ge.playerManager.RemovePlayer(e.ID)
 				ge.broadcastPlayerLeft(e.ID)

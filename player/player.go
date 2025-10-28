@@ -2,7 +2,7 @@ package player
 
 import (
 	"github.com/gorilla/websocket"
-	math "github.com/tylorkolbeck/go-sockets/engine/Math"
+	math "github.com/tylorkolbeck/go-sockets/lib/Math"
 )
 
 type Player struct {

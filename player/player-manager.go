@@ -1,11 +1,11 @@
 package player
 
 import (
-	"log"
 	"sync"
 
 	"github.com/gorilla/websocket"
-	math "github.com/tylorkolbeck/go-sockets/engine/Math"
+	"github.com/tylorkolbeck/go-sockets/internal/logger"
+	math "github.com/tylorkolbeck/go-sockets/lib/Math"
 	"github.com/tylorkolbeck/go-sockets/models"
 )
 
@@ -13,12 +13,16 @@ type PlayerManager struct {
 	mu           sync.RWMutex
 	players      map[string]*Player
 	connToPlayer map[*websocket.Conn]*Player // Reverse lookup of player by conn
+	logger       *logger.Logger
 }
 
 func NewPlayerManager() *PlayerManager {
+	log := logger.NewLogger("Player Manager")
+	log.Info("Initializing")
 	return &PlayerManager{
 		players:      make(map[string]*Player),
 		connToPlayer: make(map[*websocket.Conn]*Player),
+		logger:       log,
 	}
 }
 
@@ -37,7 +41,7 @@ func (pm *PlayerManager) RemovePlayer(id string) {
 
 	p, exists := pm.players[id]
 	if exists {
-		log.Printf("Player left - ID: %s", p.ID)
+		pm.logger.Info("Player left - ID: %s", p.ID)
 
 		if p.Conn != nil {
 			p.Conn.Close()

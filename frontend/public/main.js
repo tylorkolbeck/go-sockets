@@ -1,9 +1,9 @@
-import SceneRunner from "./canvas/SceneRunner.js";
-import SocketManager from "./canvas/handlers/SockerManager.js";
-import { WalkerScene } from "./canvas/scene/scenes/walker/WalkerScene.js";
-import { config } from "./canvas/scene/scenes/walker/config.js";
-import eventBus from "./canvas/classes/Event/EventSystem.js";
-import { uuid } from "./canvas/util/uuid.js";
+import SceneRunner from "../canvas/SceneRunner.js";
+import SocketManager from "../canvas/handlers/SockerManager.js";
+import { WalkerScene } from "../canvas/scene/scenes/walker/WalkerScene.js";
+import { config } from "../canvas/scene/scenes/walker/config.js";
+import eventBus from "../canvas/classes/Event/EventSystem.js";
+import { uuid } from "../canvas/util/uuid.js";
 
 const ownerId = uuid();
 const scene = new WalkerScene(config);

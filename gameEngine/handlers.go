@@ -2,7 +2,6 @@ package gameEngine
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/gorilla/websocket"
 	"github.com/tylorkolbeck/go-sockets/models"
@@ -10,54 +9,54 @@ import (
 )
 
 // Single client broadcasts
-func (gm *GameEngine) broadcastWorldSettings(id string) {
+func (ge *GameEngine) broadcastWorldSettings(id string) {
 	worldSettingsMsg := models.WorldSettingsMsg{
 		Type:    models.MsgTypeWorldSettings,
-		WorldW:  gm.worldW,
-		WorldH:  gm.worldH,
-		WorldBg: gm.worldbg,
+		WorldW:  ge.worldW,
+		WorldH:  ge.worldH,
+		WorldBg: ge.worldbg,
 	}
 
 	data, err := json.Marshal(worldSettingsMsg)
 	if err != nil {
-		log.Printf("Failed to marshal snapshot: %v", err)
+		ge.logger.Error("Failed to marshal snapshot: %v", err)
 	}
 
-	conn, ok := gm.playerManager.GetPlayerConnection(id)
+	conn, ok := ge.playerManager.GetPlayerConnection(id)
 	if ok {
-		broadcastTextMsg(conn, data)
+		ge.broadcastTextMsg(conn, data)
 	}
 }
 
 // All client broadcasts
-func (gm *GameEngine) broadcastPlayerLeft(id string) {
+func (ge *GameEngine) broadcastPlayerLeft(id string) {
 	leftPlayerMsg := player.PlayerLeaveMsg{
 		Type: models.MsgTypePlayerLeft,
 		ID:   id,
 	}
 	data, err := json.Marshal(leftPlayerMsg)
 	if err != nil {
-		log.Printf("Failed to marshal snapshot: %v", err)
+		ge.logger.Error("Failed to marshal snapshot: %v", err)
 	}
 
-	gm.broadCastToAllPlayers(data)
+	ge.broadCastToAllPlayers(data)
 }
 
-func (gm *GameEngine) broadcastPlayerJoined(id string) {
+func (ge *GameEngine) broadcastPlayerJoined(id string) {
 	joinedPlayerMsg := models.PlayerJoinMsg{
 		Type: models.MsgTypePlayerJoined,
 		ID:   id,
 	}
 	data, err := json.Marshal(joinedPlayerMsg)
 	if err != nil {
-		log.Printf("Failed to marshal snapshot: %v", err)
+		ge.logger.Error("Failed to marshal snapshot: %v", err)
 	}
 
-	gm.broadCastToAllPlayers(data)
+	ge.broadCastToAllPlayers(data)
 }
 
-func (gm *GameEngine) broadcastPlayerList() {
-	var playerIds = gm.playerManager.GetPlayerIDs()
+func (ge *GameEngine) broadcastPlayerList() {
+	var playerIds = ge.playerManager.GetPlayerIDs()
 
 	playerListMsg := models.PlayerListMsg{
 		Type:      models.MsgTypePlayerList,
@@ -66,40 +65,41 @@ func (gm *GameEngine) broadcastPlayerList() {
 
 	data, err := json.Marshal(playerListMsg)
 	if err != nil {
-		log.Printf("Failed to marshal snapshot: %v", err)
+		ge.logger.Error("Failed to marshal snapshot: %v", err)
 	}
 
-	gm.broadCastToAllPlayers(data)
+	ge.broadCastToAllPlayers(data)
 }
 
-func (gm *GameEngine) broadcastPlayerSnapshots() {
+func (ge *GameEngine) broadcastPlayerSnapshots() {
 	snapshot := models.SnapshotMsg{
 		Type:    models.MsgTypeSnapshot,
-		Tick:    gm.tick,
-		Players: gm.playerManager.GetAllPlayerSnapshots(),
+		Tick:    ge.tick,
+		Players: ge.playerManager.GetAllPlayerSnapshots(),
 	}
 
 	data, err := json.Marshal(snapshot)
 	if err != nil {
-		log.Printf("Failed to marshal snapshot: %v", err)
+		ge.logger.Error("Failed to marshal snapshot: %v", err)
+
 	}
 
-	gm.broadCastToAllPlayers(data)
+	ge.broadCastToAllPlayers(data)
 }
 
 // Utilities
-func (gm *GameEngine) broadCastToAllPlayers(data []byte) {
-	playerIds := gm.playerManager.GetPlayerIDs()
+func (ge *GameEngine) broadCastToAllPlayers(data []byte) {
+	playerIds := ge.playerManager.GetPlayerIDs()
 	for _, id := range playerIds {
-		conn, ok := gm.playerManager.GetPlayerConnection(id)
+		conn, ok := ge.playerManager.GetPlayerConnection(id)
 		if ok {
-			broadcastTextMsg(conn, data)
+			ge.broadcastTextMsg(conn, data)
 		}
 	}
 }
 
-func broadcastTextMsg(conn *websocket.Conn, data []byte) {
+func (ge *GameEngine) broadcastTextMsg(conn *websocket.Conn, data []byte) {
 	if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
-		log.Printf("Failed to send message: %v", err)
+		ge.logger.Error("Failed to send message: %v", err)
 	}
 }

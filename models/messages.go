@@ -1,8 +1,6 @@
 package models
 
-import (
-	math "github.com/tylorkolbeck/go-sockets/engine/Math"
-)
+import math "github.com/tylorkolbeck/go-sockets/lib/Math"
 
 type PlayerJoinMsg struct {
 	Type string `json:"type"`

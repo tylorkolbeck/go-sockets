@@ -1,10 +1,10 @@
 package websocket
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/tylorkolbeck/go-sockets/internal/logger"
 )
 
 type MessageHandler func(conn *websocket.Conn, messageType int, data []byte) error
@@ -15,9 +15,12 @@ type Manager struct {
 	messageHandler    MessageHandler
 	connectionHandler ConnectionHandler
 	disconnectHandler DisconnectHandler
+	logger            *logger.Logger
 }
 
-func NewManager(msgHandler MessageHandler, connHandler ConnectionHandler, disconnectHandler DisconnectHandler) *Manager {
+func NewWebsocketManager(msgHandler MessageHandler, connHandler ConnectionHandler, disconnectHandler DisconnectHandler) *Manager {
+	log := logger.NewLogger("Websocket Manager")
+	log.Info("Initializing")
 	return &Manager{
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
@@ -27,26 +30,27 @@ func NewManager(msgHandler MessageHandler, connHandler ConnectionHandler, discon
 		messageHandler:    msgHandler,
 		connectionHandler: connHandler,
 		disconnectHandler: disconnectHandler,
+		logger:            log,
 	}
 }
 
 func (m *Manager) HandleConnection(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		log.Printf("Connection attempted without a user id. Not upgrading connection")
+		m.logger.Error("Connection attempted without a user id. Not upgrading connection")
 		http.Error(w, "Missing id parameter", 400)
 		return
 	}
 
 	conn, err := m.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("Websocket upgrade failed: %v", err)
+		m.logger.Error("Websocket upgrade failed: %v", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
 	if err := m.connectionHandler(conn, r); err != nil {
-		log.Printf("Connection handler error: %v", err)
+		m.logger.Error("Connection handler error: %v", err)
 		conn.Close()
 		return
 	}
@@ -63,13 +67,13 @@ func (m *Manager) readLoop(conn *websocket.Conn) {
 	for {
 		messageType, data, err := conn.ReadMessage()
 		if err != nil {
-			log.Printf("Read error: %v", err)
+			m.logger.Error("Read error: %v", err)
 			break
 		}
 
 		// Pass message to handler
 		if err := m.messageHandler(conn, messageType, data); err != nil {
-			log.Printf("Message handler error: %v", err)
+			m.logger.Error("Message handler error: %v", err)
 			break
 		}
 	}
