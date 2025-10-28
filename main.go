@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/tylorkolbeck/go-sockets/gameEngine"
 	wsm "github.com/tylorkolbeck/go-sockets/websocket"
@@ -30,6 +31,7 @@ func main() {
 		log.Println("Received shutdown signal, stopping server")
 		cancel()
 
+		time.Sleep(100 * time.Millisecond)
 		os.Exit(0)
 	}()
 
