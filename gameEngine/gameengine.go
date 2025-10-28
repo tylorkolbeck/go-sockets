@@ -34,7 +34,7 @@ func NewGameEngine() *GameEngine {
 			B: 0,
 		},
 		tick:          0,
-		playerManager: player.NewPlayerManager(msgChannel),
+		playerManager: player.NewPlayerManager(),
 	}
 }
 
@@ -49,6 +49,8 @@ func (ge *GameEngine) StartGameLoop(ctx context.Context) {
 		case ev := <-ge.msgChannel:
 			switch e := ev.(type) {
 			case player.JoinMsg:
+				ge.playerManager.AddPlayer(e.ID, e.Conn)
+
 				ge.broadcastWorldSettings(ge.playerManager.GetPlayer(e.ID))
 
 				// Need to tell everyone a player joined
@@ -108,7 +110,9 @@ func (ge *GameEngine) OnClientConnectHandler(conn *websocket.Conn, r *http.Reque
 		return fmt.Errorf("missing id parameter")
 	}
 
-	ge.playerManager.AddPlayer(id, conn)
+	ge.msgChannel <- player.JoinMsg{Type: "join", ID: id, Conn: conn}
+
+	// ge.playerManager.AddPlayer(id, conn)
 	return nil
 }
 
@@ -117,5 +121,4 @@ func (ge *GameEngine) OnClientDisconnectHandler(conn *websocket.Conn) {
 	if p != nil {
 		ge.msgChannel <- player.PlayerLeaveMsg{Type: "leave", ID: p.ID}
 	}
-
 }

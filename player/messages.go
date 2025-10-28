@@ -3,8 +3,9 @@ package player
 import "github.com/gorilla/websocket"
 
 type JoinMsg struct {
-	Type string `json:"type"`
-	ID   string `json:"id"`
+	Type string          `json:"type"`
+	ID   string          `json:"id"`
+	Conn *websocket.Conn `json:"conn"`
 }
 
 type PlayerLeaveMsg struct {

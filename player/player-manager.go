@@ -12,14 +12,12 @@ type PlayerManager struct {
 	mu           sync.RWMutex
 	players      map[string]*Player
 	connToPlayer map[*websocket.Conn]*Player // Reverse lookup of player by conn
-	msgChannel   chan any
 }
 
-func NewPlayerManager(msgChannel chan any) *PlayerManager {
+func NewPlayerManager() *PlayerManager {
 	return &PlayerManager{
 		players:      make(map[string]*Player),
 		connToPlayer: make(map[*websocket.Conn]*Player),
-		msgChannel:   msgChannel,
 	}
 }
 
@@ -41,8 +39,6 @@ func (pm *PlayerManager) AddPlayer(id string, conn *websocket.Conn) {
 	p := NewPlayer(id, conn, math.Vec3{X: 0, Y: 0, Z: 0})
 	pm.players[id] = p
 	pm.connToPlayer[conn] = p
-
-	pm.msgChannel <- JoinMsg{Type: "join", ID: id}
 }
 
 func (pm *PlayerManager) GetAllPlayers() map[string]*Player {
@@ -58,9 +54,11 @@ func (pm *PlayerManager) RemovePlayer(id string) {
 	p, exists := pm.players[id]
 	if exists {
 		log.Printf("Player left - ID: %s", p.ID)
+
+		if p.Conn != nil {
+			p.Conn.Close()
+		}
 		delete(pm.players, id)
 		delete(pm.connToPlayer, p.Conn)
-
-		pm.msgChannel <- PlayerLeaveMsg{Type: "leave", ID: id}
 	}
 }
