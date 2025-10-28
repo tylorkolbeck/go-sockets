@@ -58,26 +58,30 @@ func (ge *GameEngine) StartGameLoop(ctx context.Context) {
 			case player.PlayerLeaveMsg:
 				ge.playerManager.RemovePlayer(e.ID)
 				ge.broadcastPlayerLeft(e.ID)
-			case player.PlayerWsMsg:
-				p := ge.playerManager.GetPlayer(e.ID)
+			case player.RawWsMsg:
+				p := ge.playerManager.FindPlayerByConnection(e.Conn)
 				if p != nil {
-					if e.Msg.Up {
+					if e.Data.Up {
 						p.MoveUp()
 					}
-					if e.Msg.Down {
+					if e.Data.Down {
 						p.MoveDown()
 					}
-					if e.Msg.Left {
+					if e.Data.Left {
 						p.MoveLeft()
 
 					}
-					if e.Msg.Right {
+					if e.Data.Right {
 						p.MoveRight()
 					}
+					// ge.msgChannel <- player.PlayerWsMsg{
+					// 	ID:  p.ID,
+					// 	Msg: e.Data,
+					// }
 				}
+
 			}
 		case <-ticker.C:
-			// s.update()
 			ge.tick++
 			ge.broadcast()
 		}
@@ -85,20 +89,14 @@ func (ge *GameEngine) StartGameLoop(ctx context.Context) {
 }
 
 func (ge *GameEngine) OnMessageHandler(conn *websocket.Conn, msgType int, data []byte) error {
-	p := ge.playerManager.FindPlayerByConnection(conn)
-
-	if p == nil {
-		return fmt.Errorf("player not found by connection")
-	}
-
 	var msg player.PlayerWsMsg
 	if err := json.Unmarshal(data, &msg); err != nil {
 		return err
 	}
 
-	ge.msgChannel <- player.PlayerWsMsg{
-		ID:  p.ID,
-		Msg: msg.Msg,
+	ge.msgChannel <- player.RawWsMsg{
+		Conn: conn,
+		Data: msg.Msg,
 	}
 
 	return nil

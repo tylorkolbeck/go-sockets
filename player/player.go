@@ -23,25 +23,17 @@ func NewPlayer(id string, conn *websocket.Conn, pos math.Vec3) *Player {
 }
 
 func (p *Player) MoveUp() {
-	p.wMu.Lock()
-	defer p.wMu.Unlock()
 	p.Pos.Y -= 1
 }
 
 func (p *Player) MoveDown() {
-	p.wMu.Lock()
-	defer p.wMu.Unlock()
 	p.Pos.Y += 1
 }
 
 func (p *Player) MoveLeft() {
-	p.wMu.Lock()
-	defer p.wMu.Unlock()
 	p.Pos.X -= 1
 }
 
 func (p *Player) MoveRight() {
-	p.wMu.Lock()
-	defer p.wMu.Unlock()
 	p.Pos.X += 1
 }
