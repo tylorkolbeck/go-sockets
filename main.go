@@ -35,7 +35,7 @@ func main() {
 
 	gameEngine := gameEngine.NewGameEngine()
 	wsManager := wsm.NewManager(gameEngine.OnMessageHandler, gameEngine.OnClientConnectHandler, gameEngine.OnClientDisconnectHandler)
-	go gameEngine.StartGameLoop(ctx)
+	go gameEngine.GameLoop(ctx)
 
 	flag.Parse()
 

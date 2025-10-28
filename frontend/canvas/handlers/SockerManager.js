@@ -1,4 +1,5 @@
 import eventBus from "../classes/Event/EventSystem.js";
+import { MsgType } from "./models.js";
 
 export default class SocketManager {
   sceneRunner;
@@ -33,19 +34,19 @@ export default class SocketManager {
     const data = JSON.parse(event.data);
 
     switch (data.type) {
-      case "snapshot":
+      case MsgType.MsgTypeSnapshot:
         this.handleSnapshot(data);
         break;
-      case "updatedplayerlist":
+      case MsgType.MsgTypePlayerList:
         this.handleUpdatedPlayerList(data);
         break;
-      case "playerjoined":
+      case MsgType.MsgTypePlayerJoined:
         this.sceneRunner.playerJoin({ id: data.id });
         break;
-      case "playerleft":
+      case MsgType.MsgTypePlayerLeft:
         this.sceneRunner.playerLeft(data);
         break;
-      case "worldsettings":
+      case MsgType.MsgTypeWorldSettings:
         this.sceneRunner.handleWorldSnapshot(data);
         break;
     }

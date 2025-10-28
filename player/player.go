@@ -1,8 +1,6 @@
 package player
 
 import (
-	"sync"
-
 	"github.com/gorilla/websocket"
 	math "github.com/tylorkolbeck/go-sockets/engine/Math"
 )
@@ -11,7 +9,6 @@ type Player struct {
 	ID   string
 	Pos  math.Vec3
 	Conn *websocket.Conn
-	wMu  sync.Mutex
 }
 
 func NewPlayer(id string, conn *websocket.Conn, pos math.Vec3) *Player {

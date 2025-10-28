@@ -38,7 +38,7 @@ func NewGameEngine() *GameEngine {
 	}
 }
 
-func (ge *GameEngine) StartGameLoop(ctx context.Context) {
+func (ge *GameEngine) GameLoop(ctx context.Context) {
 	ticker := time.NewTicker(50 * time.Millisecond) // 20hz
 	defer ticker.Stop()
 
@@ -50,9 +50,7 @@ func (ge *GameEngine) StartGameLoop(ctx context.Context) {
 			switch e := ev.(type) {
 			case player.JoinMsg:
 				ge.playerManager.AddPlayer(e.ID, e.Conn)
-
-				ge.broadcastWorldSettings(ge.playerManager.GetPlayer(e.ID))
-
+				ge.broadcastWorldSettings(e.ID)
 				// Need to tell everyone a player joined
 				ge.broadcastPlayerList()
 				ge.broadcastPlayerJoined(e.ID)
@@ -61,31 +59,11 @@ func (ge *GameEngine) StartGameLoop(ctx context.Context) {
 				ge.playerManager.RemovePlayer(e.ID)
 				ge.broadcastPlayerLeft(e.ID)
 			case player.RawWsMsg:
-				p := ge.playerManager.FindPlayerByConnection(e.Conn)
-				if p != nil {
-					if e.Data.Up {
-						p.MoveUp()
-					}
-					if e.Data.Down {
-						p.MoveDown()
-					}
-					if e.Data.Left {
-						p.MoveLeft()
-
-					}
-					if e.Data.Right {
-						p.MoveRight()
-					}
-					// ge.msgChannel <- player.PlayerWsMsg{
-					// 	ID:  p.ID,
-					// 	Msg: e.Data,
-					// }
-				}
-
+				ge.playerManager.MovePlayer(e.ID, e.Data)
 			}
 		case <-ticker.C:
 			ge.tick++
-			ge.broadcast()
+			ge.broadcastPlayerSnapshots()
 		}
 	}
 }
@@ -97,6 +75,7 @@ func (ge *GameEngine) OnMessageHandler(conn *websocket.Conn, msgType int, data [
 	}
 
 	ge.msgChannel <- player.RawWsMsg{
+		ID:   msg.ID,
 		Conn: conn,
 		Data: msg.Msg,
 	}
@@ -117,8 +96,8 @@ func (ge *GameEngine) OnClientConnectHandler(conn *websocket.Conn, r *http.Reque
 }
 
 func (ge *GameEngine) OnClientDisconnectHandler(conn *websocket.Conn) {
-	p := ge.playerManager.FindPlayerByConnection(conn)
-	if p != nil {
-		ge.msgChannel <- player.PlayerLeaveMsg{Type: "leave", ID: p.ID}
+	playerId := ge.playerManager.FindPlayerIDByConnection(conn)
+	if playerId != "" {
+		ge.msgChannel <- player.PlayerLeaveMsg{Type: "leave", ID: playerId}
 	}
 }

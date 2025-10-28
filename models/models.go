@@ -10,3 +10,11 @@ type Color struct {
 	G int64 `json:"g"`
 	B int64 `json:"b"`
 }
+
+const (
+	MsgTypeWorldSettings = "worldsettings"
+	MsgTypePlayerLeft    = "playerleft"
+	MsgTypePlayerJoined  = "playerjoined"
+	MsgTypePlayerList    = "updatedplayerlist"
+	MsgTypeSnapshot      = "snapshot"
+)

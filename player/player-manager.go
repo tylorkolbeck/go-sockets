@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	math "github.com/tylorkolbeck/go-sockets/engine/Math"
+	"github.com/tylorkolbeck/go-sockets/models"
 )
 
 type PlayerManager struct {
@@ -21,36 +22,13 @@ func NewPlayerManager() *PlayerManager {
 	}
 }
 
-func (pm *PlayerManager) FindPlayerByConnection(conn *websocket.Conn) *Player {
-	pm.mu.RLock()
-	defer pm.mu.RUnlock()
-	return pm.connToPlayer[conn]
-}
-
-func (pm *PlayerManager) GetPlayer(id string) *Player {
-	pm.mu.RLock()
-	defer pm.mu.RUnlock()
-	return pm.players[id]
-}
-
+// Player lifecycle
 func (pm *PlayerManager) AddPlayer(id string, conn *websocket.Conn) {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
 	p := NewPlayer(id, conn, math.Vec3{X: 0, Y: 0, Z: 0})
 	pm.players[id] = p
 	pm.connToPlayer[conn] = p
-}
-
-func (pm *PlayerManager) GetAllPlayers() map[string]*Player {
-	pm.mu.RLock()
-	defer pm.mu.RUnlock()
-
-	playersCopy := make(map[string]*Player, len(pm.players))
-	for k, v := range pm.players {
-		playersCopy[k] = v
-	}
-
-	return playersCopy
 }
 
 func (pm *PlayerManager) RemovePlayer(id string) {
@@ -67,6 +45,74 @@ func (pm *PlayerManager) RemovePlayer(id string) {
 		delete(pm.players, id)
 		delete(pm.connToPlayer, p.Conn)
 	}
+}
+
+// Player Data access (read-only)
+func (pm *PlayerManager) GetPlayerPosition(id string) (*math.Vec3, bool) {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+
+	p := pm.getPlayer(id)
+	if p != nil {
+		return &p.Pos, true
+	} else {
+		return nil, false
+	}
+}
+
+func (pm *PlayerManager) GetPlayerConnection(id string) (*websocket.Conn, bool) {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+
+	p := pm.getPlayer(id)
+	if p != nil {
+		return p.Conn, true
+	} else {
+		return nil, false
+	}
+}
+
+func (pm *PlayerManager) GetAllPlayerSnapshots() map[string]models.PlayerSnapshot {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+
+	playerPositions := make(map[string]models.PlayerSnapshot)
+
+	for _, p := range pm.players {
+		playerPositions[p.ID] = models.PlayerSnapshot{
+			Pos: p.Pos,
+		}
+
+	}
+
+	return playerPositions
+}
+
+// Player modifications
+func (pm *PlayerManager) MovePlayer(id string, inputMapping InputMapping) {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	p := pm.getPlayer(id)
+	if p != nil {
+		if inputMapping.Up {
+			p.MoveUp()
+		}
+		if inputMapping.Down {
+			p.MoveDown()
+		}
+		if inputMapping.Left {
+			p.MoveLeft()
+
+		}
+		if inputMapping.Right {
+			p.MoveRight()
+		}
+	}
+}
+
+// private
+func (pm *PlayerManager) getPlayer(id string) *Player {
+	return pm.players[id]
 }
 
 // Utilities
@@ -93,4 +139,15 @@ func (pm *PlayerManager) PlayerExists(id string) bool {
 	defer pm.mu.RUnlock()
 	_, exists := pm.players[id]
 	return exists
+}
+
+func (pm *PlayerManager) FindPlayerIDByConnection(conn *websocket.Conn) string {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+
+	if player := pm.connToPlayer[conn]; player != nil {
+		return player.ID
+	}
+
+	return ""
 }

@@ -19,6 +19,7 @@ type PlayerWsMsg struct {
 }
 
 type RawWsMsg struct {
+	ID   string
 	Conn *websocket.Conn
 	Data InputMapping
 }

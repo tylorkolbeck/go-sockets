@@ -1,8 +1,7 @@
-package gameEngine
+package models
 
 import (
 	math "github.com/tylorkolbeck/go-sockets/engine/Math"
-	"github.com/tylorkolbeck/go-sockets/models"
 )
 
 type PlayerJoinMsg struct {
@@ -26,8 +25,8 @@ type SnapshotMsg struct {
 }
 
 type WorldSettingsMsg struct {
-	Type    string       `json:"type"`
-	WorldW  float64      `json:"worldwidth"`
-	WorldH  float64      `json:"worldheight"`
-	WorldBg models.Color `json:"worldbg"`
+	Type    string  `json:"type"`
+	WorldW  float64 `json:"worldwidth"`
+	WorldH  float64 `json:"worldheight"`
+	WorldBg Color   `json:"worldbg"`
 }
