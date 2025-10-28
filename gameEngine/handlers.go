@@ -7,7 +7,7 @@ import (
 	"github.com/tylorkolbeck/go-sockets/player"
 )
 
-func (gm *GameEngine) broadcastWorldSettings(player player.Player) {
+func (gm *GameEngine) broadcastWorldSettings(player *player.Player) {
 	worldSettingsMsg := WorldSettingsMsg{
 		Type:    "worldsettings",
 		WorldW:  gm.worldW,

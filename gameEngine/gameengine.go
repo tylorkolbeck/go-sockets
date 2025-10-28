@@ -49,7 +49,7 @@ func (ge *GameEngine) StartGameLoop(ctx context.Context) {
 		case ev := <-ge.msgChannel:
 			switch e := ev.(type) {
 			case player.JoinMsg:
-				ge.broadcastWorldSettings(*ge.playerManager.GetPlayer(e.ID))
+				ge.broadcastWorldSettings(ge.playerManager.GetPlayer(e.ID))
 
 				// Need to tell everyone a player joined
 				ge.broadcastPlayerList()
