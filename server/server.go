@@ -12,7 +12,6 @@ import (
 
 type Server struct {
 	mu            sync.Mutex
-	players       map[string]*player.Player
 	msgChannel    chan any
 	tick          uint64
 	worldW        float64
@@ -24,7 +23,6 @@ type Server struct {
 func NewServer() *Server {
 	msgChannel := make(chan any, 1024)
 	return &Server{
-		players:    map[string]*player.Player{},
 		msgChannel: msgChannel,
 		worldW:     800,
 		worldH:     800,
