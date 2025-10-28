@@ -22,7 +22,7 @@ var host = flag.String("host", "localhost", "http service host")
 
 func main() {
 	logger := logger.NewLogger("main")
-	fs := http.FileServer(http.Dir("frontend/public"))
+	fs := http.FileServer(http.Dir("frontend"))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

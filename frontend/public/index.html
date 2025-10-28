@@ -2,37 +2,38 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Programming With Sockets</title>
-  <script src="lib/p5/p5.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multiplayer Game</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-  <script type="module" src="canvas/SceneRunner.js"></script>
-  <div class="flex controls space-between">
-    <div>
-      <input type="text" id="wsInput" placeholder="Send Message...">
-      <button id="sendBtn" class="bg-green">Send</button>
+  <!-- Game Controls -->
+  <div class="controls">
+    <div class="flex space-between">
+      <div class="flex">
+        <button id="connectBtn" class="bg-green">Connect</button>
+        <button id="disconnectBtn" class="bg-red">Disconnect</button>
+        <!-- <input type="text" id="wsInput" placeholder="Send message..." /> -->
+        <!-- <button id="sendBtn" class="bg-green">Send</button> -->
+      </div>
+
+      <div class="server-status">
+        <div>Connection: <span id="connectStatusP">❌</span></div>
+        <div>Player ID: <span id="userId"></span></div>
+      </div>
     </div>
   </div>
 
-  <div class="server-status">
-    <p>Server Status: <span id="connectStatusP">❌</span></p>
+  <!-- Game Canvas -->
+  <div id="canvas"></div>
 
-    <div>
-      <p>Connection ID:</p>
-      <p id="userId"></p>
-    </div>
-    <button id="connectBtn" class="bg-green">Connect</button>
-    <button id="disconnectBtn" class="bg-red">Disconect</button>
+  <!-- Load p5.js library -->
+  <script src="../assets/lib/p5/p5.js"></script>
 
-  </div>
-
-  <canvas id="canvas"></canvas>
-
-  <script type="module" src="main.js"></script>
+  <!-- Load main application as ES6 module -->
+  <script type="module" src="../src/main.js"></script>
 </body>
 
 </html>
