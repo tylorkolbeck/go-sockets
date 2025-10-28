@@ -1,0 +1,76 @@
+package websocket
+
+import (
+	"log"
+	"net/http"
+
+	"github.com/gorilla/websocket"
+)
+
+type MessageHandler func(conn *websocket.Conn, messageType int, data []byte) error
+type ConnectionHandler func(conn *websocket.Conn, r *http.Request) error
+type DisconnectHandler func(conn *websocket.Conn)
+type Manager struct {
+	upgrader          websocket.Upgrader
+	messageHandler    MessageHandler
+	connectionHandler ConnectionHandler
+	disconnectHandler DisconnectHandler
+}
+
+func NewManager(msgHandler MessageHandler, connHandler ConnectionHandler, disconnectHandler DisconnectHandler) *Manager {
+	return &Manager{
+		upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		},
+		messageHandler:    msgHandler,
+		connectionHandler: connHandler,
+		disconnectHandler: disconnectHandler,
+	}
+}
+
+func (m *Manager) HandleConnection(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		log.Printf("Connection attempted without a user id. Not upgrading connection")
+		http.Error(w, "Missing id parameter", 400)
+		return
+	}
+
+	conn, err := m.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("Websocket upgrade failed: %v", err)
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if err := m.connectionHandler(conn, r); err != nil {
+		log.Printf("Connection handler error: %v", err)
+		conn.Close()
+		return
+	}
+
+	go m.readLoop(conn)
+}
+
+func (m *Manager) readLoop(conn *websocket.Conn) {
+	defer func() {
+		m.disconnectHandler(conn)
+		conn.Close()
+	}()
+
+	for {
+		messageType, data, err := conn.ReadMessage()
+		if err != nil {
+			log.Printf("Read error: %v", err)
+			break
+		}
+
+		// Pass message to handler
+		if err := m.messageHandler(conn, messageType, data); err != nil {
+			log.Printf("Message handler error: %v", err)
+			break
+		}
+	}
+}

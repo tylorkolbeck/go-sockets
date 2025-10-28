@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/tylorkolbeck/go-sockets/gameEngine"
+	wsm "github.com/tylorkolbeck/go-sockets/websocket"
 )
 
 var port = flag.String("port", "8000", "http service port")
@@ -33,12 +34,13 @@ func main() {
 	}()
 
 	gameEngine := gameEngine.NewGameEngine()
-	go gameEngine.Run(ctx)
+	wsManager := wsm.NewManager(gameEngine.OnMessageHandler, gameEngine.OnClientConnectHandler, gameEngine.OnClientDisconnectHandler)
+	go gameEngine.StartGameLoop(ctx)
 
 	flag.Parse()
 
 	// Websocket route
-	http.HandleFunc("/connect", gameEngine.HandleWs)
+	http.HandleFunc("/connect", wsManager.HandleConnection)
 
 	// File Server route
 	http.Handle("/", fs)
@@ -47,5 +49,4 @@ func main() {
 	log.Printf("Listening on: %s", uri)
 
 	log.Fatal(http.ListenAndServe(uri, nil))
-
 }

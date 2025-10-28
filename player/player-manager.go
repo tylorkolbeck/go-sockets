@@ -2,46 +2,65 @@ package player
 
 import (
 	"log"
+	"sync"
 
 	"github.com/gorilla/websocket"
 	math "github.com/tylorkolbeck/go-sockets/engine/Math"
 )
 
 type PlayerManager struct {
-	players    map[string]*Player
-	msgChannel chan any
+	mu           sync.RWMutex
+	players      map[string]*Player
+	connToPlayer map[*websocket.Conn]*Player // Reverse lookup of player by conn
+	msgChannel   chan any
 }
 
 func NewPlayerManager(msgChannel chan any) *PlayerManager {
 	return &PlayerManager{
-		players:    make(map[string]*Player),
-		msgChannel: msgChannel,
+		players:      make(map[string]*Player),
+		connToPlayer: make(map[*websocket.Conn]*Player),
+		msgChannel:   msgChannel,
 	}
 }
 
+func (pm *PlayerManager) FindPlayerByConnection(conn *websocket.Conn) *Player {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+	return pm.connToPlayer[conn]
+}
+
 func (pm *PlayerManager) GetPlayer(id string) *Player {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
 	return pm.players[id]
 }
 
 func (pm *PlayerManager) AddPlayer(id string, conn *websocket.Conn) {
-	p := NewPlayer(id, math.Vec3{X: 0, Y: 0, Z: 0}, conn)
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	p := NewPlayer(id, conn, math.Vec3{X: 0, Y: 0, Z: 0})
 	pm.players[id] = p
+	pm.connToPlayer[conn] = p
 
-	pm.msgChannel <- JoinMsg{Type: "join", ID: id, Player: *p}
-	go p.StartPlayerWsReadLoop(pm.msgChannel)
+	pm.msgChannel <- JoinMsg{Type: "join", ID: id}
 }
 
 func (pm *PlayerManager) GetAllPlayers() map[string]*Player {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
 	return pm.players
 }
 
 func (pm *PlayerManager) RemovePlayer(id string) {
-	if p, ok := pm.players[id]; ok {
-		log.Printf("Player left - ID: %s", p.ID)
-		if p.Conn != nil {
-			_ = p.Conn.Close()
-		}
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
 
+	p, exists := pm.players[id]
+	if exists {
+		log.Printf("Player left - ID: %s", p.ID)
 		delete(pm.players, id)
+		delete(pm.connToPlayer, p.Conn)
+
+		pm.msgChannel <- PlayerLeaveMsg{Type: "leave", ID: id}
 	}
 }

@@ -1,20 +1,20 @@
 package player
 
 import (
-	"encoding/json"
+	"sync"
 
 	"github.com/gorilla/websocket"
 	math "github.com/tylorkolbeck/go-sockets/engine/Math"
-	"github.com/tylorkolbeck/go-sockets/models"
 )
 
 type Player struct {
 	ID   string
 	Pos  math.Vec3
 	Conn *websocket.Conn
+	wMu  sync.Mutex
 }
 
-func NewPlayer(id string, pos math.Vec3, conn *websocket.Conn) *Player {
+func NewPlayer(id string, conn *websocket.Conn, pos math.Vec3) *Player {
 	return &Player{
 		ID:   id,
 		Pos:  pos,
@@ -22,44 +22,26 @@ func NewPlayer(id string, pos math.Vec3, conn *websocket.Conn) *Player {
 	}
 }
 
-func (p *Player) StartPlayerWsReadLoop(msgChannel chan any) {
-	defer func() {
-		msgChannel <- models.PlayerLeaveMsg{Type: "leave", ID: p.ID}
-		if p.Conn != nil {
-			_ = p.Conn.Close()
-		}
-	}()
-
-	for {
-		_, data, err := p.Conn.ReadMessage()
-		if err != nil {
-			return
-		}
-
-		var msg PlayerWsMsg
-		if err := json.Unmarshal(data, &msg); err != nil {
-			continue
-		}
-
-		msgChannel <- PlayerWsMsg{
-			ID:  msg.ID,
-			Msg: msg.Msg,
-		}
-	}
-}
-
 func (p *Player) MoveUp() {
+	p.wMu.Lock()
+	defer p.wMu.Unlock()
 	p.Pos.Y -= 1
 }
 
 func (p *Player) MoveDown() {
+	p.wMu.Lock()
+	defer p.wMu.Unlock()
 	p.Pos.Y += 1
 }
 
 func (p *Player) MoveLeft() {
+	p.wMu.Lock()
+	defer p.wMu.Unlock()
 	p.Pos.X -= 1
 }
 
 func (p *Player) MoveRight() {
+	p.wMu.Lock()
+	defer p.wMu.Unlock()
 	p.Pos.X += 1
 }

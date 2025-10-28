@@ -68,9 +68,6 @@ func (gm *GameEngine) broadcastPlayerList() {
 }
 
 func (gm *GameEngine) broadcast() {
-	gm.mu.Lock()
-	defer gm.mu.Unlock()
-
 	snapshot := SnapshotMsg{
 		Type:    "snapshot",
 		Tick:    gm.tick,

@@ -1,9 +1,8 @@
 package player
 
 type JoinMsg struct {
-	Type   string `json:"type"`
-	ID     string `json:"id"`
-	Player Player `json:"player"`
+	Type string `json:"type"`
+	ID   string `json:"id"`
 }
 
 type PlayerLeaveMsg struct {

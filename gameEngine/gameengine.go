@@ -2,16 +2,18 @@ package gameEngine
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
-	"sync"
+	"net/http"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/tylorkolbeck/go-sockets/models"
 	"github.com/tylorkolbeck/go-sockets/player"
 )
 
 type GameEngine struct {
-	mu            sync.Mutex
 	msgChannel    chan any
 	tick          uint64
 	worldW        float64
@@ -36,12 +38,7 @@ func NewGameEngine() *GameEngine {
 	}
 }
 
-// func (s *Server) update() {
-// 	s.mu.Lock()
-// 	defer s.mu.Unlock()
-// }
-
-func (ge *GameEngine) Run(ctx context.Context) {
+func (ge *GameEngine) StartGameLoop(ctx context.Context) {
 	ticker := time.NewTicker(50 * time.Millisecond) // 20hz
 	defer ticker.Stop()
 
@@ -52,22 +49,16 @@ func (ge *GameEngine) Run(ctx context.Context) {
 		case ev := <-ge.msgChannel:
 			switch e := ev.(type) {
 			case player.JoinMsg:
-				ge.mu.Lock()
-				ge.broadcastWorldSettings(e.Player)
+				ge.broadcastWorldSettings(*ge.playerManager.GetPlayer(e.ID))
 
 				// Need to tell everyone a player joined
 				ge.broadcastPlayerList()
 				ge.broadcastPlayerJoined(e.ID)
 				log.Printf("Player joined - ID: %s", e.ID)
-
-				ge.mu.Unlock()
-			case models.PlayerLeaveMsg:
-				ge.mu.Lock()
+			case player.PlayerLeaveMsg:
 				ge.playerManager.RemovePlayer(e.ID)
 				ge.broadcastPlayerLeft(e.ID)
-				ge.mu.Unlock()
 			case player.PlayerWsMsg:
-				ge.mu.Lock()
 				p := ge.playerManager.GetPlayer(e.ID)
 				if p != nil {
 					if e.Msg.Up {
@@ -84,8 +75,6 @@ func (ge *GameEngine) Run(ctx context.Context) {
 						p.MoveRight()
 					}
 				}
-
-				ge.mu.Unlock()
 			}
 		case <-ticker.C:
 			// s.update()
@@ -93,4 +82,42 @@ func (ge *GameEngine) Run(ctx context.Context) {
 			ge.broadcast()
 		}
 	}
+}
+
+func (ge *GameEngine) OnMessageHandler(conn *websocket.Conn, msgType int, data []byte) error {
+	p := ge.playerManager.FindPlayerByConnection(conn)
+
+	if p == nil {
+		return fmt.Errorf("player not found by connection")
+	}
+
+	var msg player.PlayerWsMsg
+	if err := json.Unmarshal(data, &msg); err != nil {
+		return err
+	}
+
+	ge.msgChannel <- player.PlayerWsMsg{
+		ID:  p.ID,
+		Msg: msg.Msg,
+	}
+
+	return nil
+}
+
+func (ge *GameEngine) OnClientConnectHandler(conn *websocket.Conn, r *http.Request) error {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		return fmt.Errorf("missing id parameter")
+	}
+
+	ge.playerManager.AddPlayer(id, conn)
+	return nil
+}
+
+func (ge *GameEngine) OnClientDisconnectHandler(conn *websocket.Conn) {
+	p := ge.playerManager.FindPlayerByConnection(conn)
+	if p != nil {
+		ge.msgChannel <- player.PlayerLeaveMsg{Type: "leave", ID: p.ID}
+	}
+
 }
