@@ -23,7 +23,7 @@ export default class SceneRunner {
       throw new Error("Scene has not been set");
     }
     p5.disableFriendlyErrors = true;
-    this.bindP5Functions();
+    this.startP5Scene();
   }
 
   handleWorldSnapshot(worldData) {
@@ -52,7 +52,7 @@ export default class SceneRunner {
     this.scene.handlePlayerSnapshot(snapshot);
   }
 
-  bindP5Functions() {
+  startP5Scene() {
     // Make functions global for p5.js
     window.preload = () => {
       this.scene.preload();

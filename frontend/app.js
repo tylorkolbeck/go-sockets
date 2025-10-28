@@ -79,8 +79,12 @@ function handleSceneKeyPress(event) {
 // GAME EVENTS
 function registerGameEventHandlers() {
   eventBus.subscribe("sceneKeyPressed", handleSceneKeyPress);
-  eventBus.subscribe("serverconnected", handleServerConnChange);
-  eventBus.subscribe("serverdisconnected", handleServerConnChange);
+  eventBus.subscribe("serverconnected", (event) =>
+    handleServerConnChange(event.data)
+  );
+  eventBus.subscribe("serverdisconnected", (event) =>
+    handleServerConnChange(event.data)
+  );
 }
 
 // TODO: pass is connected as an app level event
@@ -110,8 +114,13 @@ function registerDomEventHandlers() {
   el.connectBtn.addEventListener("click", connectToServerHandler);
 }
 
-function handleServerConnChange(event) {
-  renderConnectionStatus(event?.data);
+function handleServerConnChange(isConnected) {
+  renderConnectionStatus(isConnected);
+
+  // TODO: Stop p5
+  // if (!isConnected) {
+  //   remove();
+  // }
 }
 
 // DOM

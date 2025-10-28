@@ -55,10 +55,6 @@ export default class SocketManager {
     this.sceneRunner.handlePlayerSnapshot(data);
   }
 
-  handleDisconnect() {
-    this.isConnected = false;
-  }
-
   handleUpdatedPlayerList(playerList) {
     this.sceneRunner.handlePlayerListUpdate(playerList.playerIds);
   }

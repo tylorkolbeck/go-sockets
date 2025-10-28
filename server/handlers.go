@@ -22,12 +22,12 @@ func (s *Server) broadcastWorldSettings(player player.Player) {
 }
 
 func (s *Server) broadcastPlayerLeft(id string) {
-	leftPlayerMsg := PlayerLeaveMsg{
+	leftPlayerMsg := player.PlayerLeaveMsg{
 		Type: "playerleft",
 		ID:   id,
 	}
 	data, _ := json.Marshal(leftPlayerMsg)
-	for _, p := range s.players {
+	for _, p := range s.playerManager.GetAllPlayers() {
 		if p.Conn != nil {
 			p.Conn.WriteMessage(websocket.TextMessage, data)
 		}
@@ -40,7 +40,7 @@ func (s *Server) broadcastPlayerJoined(id string) {
 		ID:   id,
 	}
 	data, _ := json.Marshal(joinedPlayerMsg)
-	for _, p := range s.players {
+	for _, p := range s.playerManager.GetAllPlayers() {
 		if p.ID != id && p.Conn != nil {
 			p.Conn.WriteMessage(websocket.TextMessage, data)
 		}
@@ -49,12 +49,13 @@ func (s *Server) broadcastPlayerJoined(id string) {
 
 func (s *Server) broadcastPlayerList() {
 	var playerIds []string
+	players := s.playerManager.GetAllPlayers()
 
-	for _, p := range s.players {
+	for _, p := range players {
 		playerIds = append(playerIds, p.ID)
 	}
 
-	for _, p := range s.players {
+	for _, p := range players {
 		if p.Conn != nil {
 			updatedPlayerList := PlayerListMsg{
 				Type:      "updatedplayerlist",
@@ -76,14 +77,14 @@ func (s *Server) broadcast() {
 		Players: map[string]PlayerSnapshot{},
 	}
 
-	for id, p := range s.players {
+	for id, p := range s.playerManager.GetAllPlayers() {
 		snapshot.Players[id] = PlayerSnapshot{
 			Pos: p.Pos,
 		}
 	}
 
 	data, _ := json.Marshal(snapshot)
-	for _, p := range s.players {
+	for _, p := range s.playerManager.GetAllPlayers() {
 		if p.Conn != nil {
 			_ = p.Conn.WriteMessage(websocket.TextMessage, data)
 		}

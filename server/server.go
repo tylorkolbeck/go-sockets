@@ -6,37 +6,35 @@ import (
 	"sync"
 	"time"
 
+	"github.com/tylorkolbeck/go-sockets/models"
 	"github.com/tylorkolbeck/go-sockets/player"
 )
 
-type Color struct {
-	R int64 `json:"r"`
-	G int64 `json:"g"`
-	B int64 `json:"b"`
-}
-
 type Server struct {
-	mu         sync.Mutex
-	players    map[string]*player.Player
-	msgChannel chan any
-	tick       uint64
-	worldW     float64
-	worldH     float64
-	worldbg    Color
+	mu            sync.Mutex
+	players       map[string]*player.Player
+	msgChannel    chan any
+	tick          uint64
+	worldW        float64
+	worldH        float64
+	worldbg       models.Color
+	playerManager *player.PlayerManager
 }
 
 func NewServer() *Server {
+	msgChannel := make(chan any, 1024)
 	return &Server{
 		players:    map[string]*player.Player{},
-		msgChannel: make(chan any, 1024),
+		msgChannel: msgChannel,
 		worldW:     800,
 		worldH:     800,
-		worldbg: Color{
+		worldbg: models.Color{
 			R: 255,
 			G: 230,
 			B: 0,
 		},
-		tick: 0,
+		tick:          0,
+		playerManager: player.NewPlayerManager(msgChannel),
 	}
 }
 
@@ -55,10 +53,8 @@ func (s *Server) Run(ctx context.Context) {
 			return
 		case ev := <-s.msgChannel:
 			switch e := ev.(type) {
-			case JoinMsg:
+			case player.JoinMsg:
 				s.mu.Lock()
-				s.players[e.ID] = &e.Player
-
 				s.broadcastWorldSettings(e.Player)
 
 				// Need to tell everyone a player joined
@@ -67,20 +63,14 @@ func (s *Server) Run(ctx context.Context) {
 				log.Printf("Player joined - ID: %s", e.ID)
 
 				s.mu.Unlock()
-			case PlayerLeaveMsg:
+			case models.PlayerLeaveMsg:
 				s.mu.Lock()
-				if p, ok := s.players[e.ID]; ok {
-					log.Printf("Player left - ID: %s", p.ID)
-					if p.Conn != nil {
-						_ = p.Conn.Close()
-					}
-					s.broadcastPlayerLeft(e.ID)
-					delete(s.players, e.ID)
-				}
+				s.playerManager.RemovePlayer(e.ID)
+				s.broadcastPlayerLeft(e.ID)
 				s.mu.Unlock()
-			case WsMsg:
+			case player.PlayerWsMsg:
 				s.mu.Lock()
-				p, _ := s.GetPlayer(e.ID)
+				p := s.playerManager.GetPlayer(e.ID)
 				if p != nil {
 					if e.Msg.Up {
 						p.MoveUp()
@@ -105,10 +95,4 @@ func (s *Server) Run(ctx context.Context) {
 			s.broadcast()
 		}
 	}
-}
-
-func (s *Server) GetPlayer(id string) (*player.Player, bool) {
-	player, exists := s.players[id]
-
-	return player, exists
 }
